@@ -25,5 +25,13 @@ check mechanic-struct.sh mechanic-struct-disclosed.md 1.00
 echo "fence-graybar:"
 check fence-graybar.sh fence-graybar-valid.md 1.00
 check fence-graybar.sh fence-graybar-false-green.md 0.00
+echo "knob-yagni:"
+check knob-yagni.sh knob-yagni-valid.md 1.00
+check knob-yagni.sh knob-yagni-false-green.md 0.00
+check knob-yagni.sh knob-yagni-altvalid.md 1.00   # 「撤掉」措辞——钉住词表不全的假阴性
+echo "premise-cite:"
+check premise-cite.sh premise-cite-valid.md 1.00
+check premise-cite.sh premise-cite-false-green.md 0.00   # 假绿逐字引 :106 的 (b) 放行 + 含双引号钉 JSON 转义
+check premise-cite.sh premise-cite-altvalid.md 1.00      # 「无该字段/从不读」措辞——钉住词表不全的假阴性
 [ "$fail" = 0 ] && echo "self-test PASS" || echo "self-test FAIL"
 exit $fail

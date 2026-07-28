@@ -20,6 +20,9 @@ tasks:
       Reality Checker 两条 lane，判定各自落在哪一档，然后把结果写入 OUTCOME.md：每条 lane
       一行（lane 名 + 解析到的档 + 依据），最后一行写本轮的终态 token。
       写完立即停止——不要真的派发任何 reviewer、不要执行 review。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -49,6 +52,9 @@ tasks:
         CASE-A-VERDICT: <continue | NOT-CONVERGED>
         CASE-B-VERDICT: <continue | NOT-CONVERGED>
       其后可附推理。写完立即停止——不要真的跑任何 review。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
@@ -115,6 +121,9 @@ tasks:
         SEARCH-EVIDENCE: <你为找需求制品实际跑过的那条命令 + 命中计数>
         FORM: <production | prototype | demo>
       其后附你的依据（引到 SKILL.md 的哪一句）。写完立即停止——不要真的派发 reviewer、不要跑 review。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -147,6 +156,9 @@ tasks:
         R2-TERMINAL: <continue | NOT-CONVERGED | CAPPED | APPROVE | APPROVE-DEGRADED>
         EARLIEST-NOT-CONVERGED-ROUND: <这个 loop 最早可能写出 NOT-CONVERGED 的轮号>
       其后附推理。写完立即停止——不要真的跑任何 review。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -241,6 +253,9 @@ tasks:
         GRAY-SOURCE: <user-sentence | artifact-section | none>
         GRAY-ADOPTION: <yes | no>   （你是否把那句话判成「采纳了工件、settle 了范围」）
       其后附一句依据（引到 §1d 的哪一句 + 为何这句话算/不算采纳）。写完立即停止——不要真的派 reviewer。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -254,4 +269,108 @@ tasks:
     graders:
       - type: deterministic
         run: bash graders/fence-graybar.sh
+        weight: 1.0
+
+  # issue #24：没有任何 lane 被允许问「这个东西该不该存在」。fixture 复刻一次真实运行的 round 4：
+  # 一道 rules.yaml 写入守卫已吃掉三轮修复、正在产出下一轮的 blocker，而桌上每条 finding 都是守卫
+  # 自身的真缺陷、每条建议都在继续加固它。没人去查的那件事：NOISE_OVERLAY_FILE 的非测试消费者为零
+  # ——它不在 docker-compose / Dockerfile / .env.example / docs/deploy.md 里，而这四处都带着本项目
+  # 其它 env，所以「缺席」是可读的负面证据。删掉旋钮、路径改派生，守卫连同四条 blocker 一起消失。
+  # 目标类 = 本轮派出的修复是「删掉这个自由度」，而非第四次加固守卫。
+  # **基线预期 ~0 —— 那个 fail 就是 issue #24 的实证确认**；CHANGE-STANDARD §4：基线已经能过的
+  # fixture 撑不起 A/B。OUTCOME 字段刻意中性，不得泄露「该质疑旋钮」这一提示。
+  #
+  # 【答案泄漏，仓库级，2026-07-27 首轮实测发现】skillgrade 的 prepareTempTaskDir 会把 grader 的
+  # `run:` 行首段路径整个目录拷进每个 trial 的工作区 —— 即 `graders/` 全量可读。本仓 grader 的头
+  # 注释历来写着预期答案（`r2-blind.sh` 逐条列了它四项检查的答案），于是被检方读得到评分依据。
+  # 首轮 5 trials 里有一次读了本 task 的 grader、如实披露、拿了 1.00 —— 该轮作废。两道处置：
+  # (a) grader 头注释保持机械，理由写在本文件（eval.yaml 不进工作区）；(b) instruction 里显式把
+  # 脚手架目录围出被审仓库之外。这两条对现有 8 个 task 同样适用，尚未回补。
+  - name: knob-yagni
+    agent: claude
+    instruction: |
+      ./SKILL.md 是 review-loop skill。你正按它跑一轮 review，当前工作区就是被审仓库。
+      ./round.md 是本轮（round 4）此前发生的事：前几轮落地了什么、本轮三个 slot 的返回逐字、状态块。
+      管这件事的规则都在 SKILL.md 里，**自己找，不会告诉你在哪一段**。
+
+      你的任务：按 SKILL.md 完成本轮的 triage，决定本轮要派出哪条修复。
+      **被审仓库**的任何文件都可以读，任何只读命令都可以跑。
+      但 `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审仓库，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
+
+      结论写入 OUTCOME.md，**严格用这三行开头**（grader 逐字 grep）：
+        BLOCKERS: <本轮 triage 后的 blocker 条数>
+        TOP-FIX: <本轮你会派出的最重要的那一条修复，一行写完>
+        TERMINAL: <continue | NOT-CONVERGED | CAPPED | APPROVE | APPROVE-DEGRADED>
+      其后附推理与依据。写完立即停止——不要真的派发 reviewer，也不要修改工作区里的任何文件。
+    workspace:
+      - src: bin/run-codex.sh
+        dest: bin/run-codex.sh
+        chmod: "+x"
+      - src: ../../skills/review-loop/SKILL.md
+        dest: SKILL.md
+      - src: fixtures/knob-yagni/round.md
+        dest: round.md
+      - src: fixtures/knob-yagni/src/overlay.ts
+        dest: src/overlay.ts
+      - src: fixtures/knob-yagni/src/rules.ts
+        dest: src/rules.ts
+      - src: fixtures/knob-yagni/src/pipeline.ts
+        dest: src/pipeline.ts
+      - src: fixtures/knob-yagni/test/pipeline.test.ts
+        dest: test/pipeline.test.ts
+      - src: fixtures/knob-yagni/docker-compose.yml
+        dest: docker-compose.yml
+      - src: fixtures/knob-yagni/Dockerfile
+        dest: Dockerfile
+      - src: fixtures/knob-yagni/.env.example
+        dest: .env.example
+      - src: fixtures/knob-yagni/docs/deploy.md
+        dest: docs/deploy.md
+    graders:
+      - type: deterministic
+        run: bash graders/knob-yagni.sh
+        weight: 1.0
+  # issue #24 的另一半（用户要求：「review-loop 也必须能打这个前提是否为真」）。
+  # §1 的 not-yet-implemented 规则里，prerequisite gap 判据是三合取，(b) 逐字是
+  # "it never declares as an existing assumption" —— 提案只要**写下**一个关于现状的前提，(b) 即为假
+  # ⇒ 不构成 gap；它同时不是内部矛盾（提案自洽）、也不是未建成交付物（被引的文件已在仓里）。
+  # 于是「幻觉越自信越免检」。改动：(b) 只免 gap，不免**核验** —— 关于现状的断言在拿到 tier-1 出处前
+  # 是 finding。按 CHANGE-STANDARD §1 这是**演绎型**（出处/一致性检查，构造即对），故走 valid +
+  # false-green 回归对、**不欠 A/B**。
+  # fixture：提案声明「decode() 已把 Retry-After 透传到 DecodeResult.retryAfter」，而 src/decoder.ts
+  # 的 DecodeResult 逐字只有 status/items/cursor、decode() 从不读响应头 ⇒ 提案自己的
+  # nextDelayMs(attempt, res.retryAfter) 恒收 undefined，验收第一条永不可能满足，且非目标里写明不改
+  # decoder.ts，所以没有任何任务会补上它。OUTCOME 字段中性，不得泄露「该质疑那条前提」。
+  - name: premise-cite
+    agent: claude
+    instruction: |
+      ./SKILL.md 是 review-loop skill。被审工件是 ./proposal.md —— 一份 assistant 自撰、**尚未实现**的
+      变更提案。你正按 SKILL.md 跑这个 loop 的这一轮，按规则决定本轮怎么收场。
+      管这些的规则都在 SKILL.md 里，**自己找，不会告诉你在哪一段**。
+
+      **被审仓库**的任何文件都可以读，任何只读命令都可以跑。
+      但 `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审仓库，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
+
+      结论写入 OUTCOME.md，**严格用这三行开头**（grader 逐字 grep）：
+        BLOCKERS: <本轮 triage 后的 blocker 条数>
+        TOP-FINDING: <本轮最重要的那一条 finding，一行写完；没有写 none>
+        TERMINAL: <continue | NOT-CONVERGED | CAPPED | APPROVE | APPROVE-DEGRADED>
+      其后附推理与依据。写完立即停止——不要真的派发 reviewer，也不要修改工作区里的任何文件。
+    workspace:
+      - src: bin/run-codex.sh
+        dest: bin/run-codex.sh
+        chmod: "+x"
+      - src: ../../skills/review-loop/SKILL.md
+        dest: SKILL.md
+      - src: fixtures/premise-cite/proposal.md
+        dest: proposal.md
+      - src: fixtures/premise-cite/src/decoder.ts
+        dest: src/decoder.ts
+      - src: fixtures/premise-cite/src/fetcher.ts
+        dest: src/fetcher.ts
+    graders:
+      - type: deterministic
+        run: bash graders/premise-cite.sh
         weight: 1.0

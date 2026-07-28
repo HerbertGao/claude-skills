@@ -1,0 +1,18 @@
+services:
+  mailsift:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /var/lib/mailsift
+      CONFIG_DIR: /etc/mailsift
+      BATCH_SIZE: "200"
+      SMTP_HOST: relay.internal
+      LOG_LEVEL: info
+    volumes:
+      - ./config:/etc/mailsift:ro
+      - mailsift-data:/var/lib/mailsift
+    ports:
+      - "8080:8080"
+
+volumes:
+  mailsift-data:
