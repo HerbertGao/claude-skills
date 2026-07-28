@@ -1,13 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for the round-2 regression blind spot claimed in issue #22 item 2.
-# Fixture: round 1 is the loop's first round; round 2's triage is 3 blocker/major, ALL of them
-# fix-induced under the prose test (each quotes text round 1 Landed AND names a requirement that
-# did not exist before that rewrite). What the spec makes determinate:
-#   1. Regression: is `3 of 3` — the ratio IS echoed, so "no mechanism makes it visible" is false;
-#   2. the root-cause step is NOT dispatched at round 2 (its trigger needs two consecutive rounds);
-#   3. round 2 therefore writes no token and continues;
-#   4. with round 1 forced to `n/a (no prior fix)`, the earliest NOT-CONVERGED is round 3.
-# 1 vs 2+3+4 is the whole question: visible but ungated, or invisible.
+# r2-blind.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 F="${OUTCOME_FILE:-OUTCOME.md}"
 p=0; t=4; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }

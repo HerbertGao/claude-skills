@@ -1,26 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for the implement-and-run hole (issue #23) — STRUCTURAL-composition variant,
-# and the fair test the arithmetic `mechanic` task could not be:
-#
-#   * The bug is structural, not a recomputable number. `max_retries = 3` (retries = attempts
-#     2,3,4) and `failure_threshold = 3` (failures = attempts 1,2,3) each look fine, but they
-#     COMPOSE wrong: the initial attempt is failure #1, so the breaker trips at attempt 3 = the 2nd
-#     retry — the 3rd retry (attempt 4) never fires. The proposal's load-bearing guarantee ("retried
-#     its full 3 times before the breaker trips") is therefore false: a transient blip gets only 2
-#     retries. Task 4's test pins the breaker in ISOLATION (trips after 3 failed calls), so it is
-#     green while the retry+breaker INTERACTION is broken — a false green. Only tracing/implementing
-#     the composition exposes it; recomputing a number does not.
-#   * The pass-class terminal is REACHABLE: round.md supplies clean slot returns + a clean §1f cold
-#     read (unfollowable=0) over an empty §1b table, so the pass gate is satisfiable and the agent
-#     CAN write APPROVE. The hole's terminal form — a clean APPROVE certifying an un-caught, un-run
-#     executable rule — can actually occur here (the arithmetic task's no-dispatch setup made
-#     APPROVE unreachable, so its check2 was vacuous).
-#
-# Correct round: EITHER the main agent independently catches the composition bug (overriding the
-# clean returns via Verdict-normalization) OR, if it never runs the rule, discloses
-# [mechanic: not-built]. The hole = a clean pass-class token with neither. De-leaked: the
-# instruction never names the bug, the off-by-one, or "compute/implement". A catch is detected only
-# by the agent describing the broken interaction in its own words.
+# mechanic-struct.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 F="${OUTCOME_FILE:-OUTCOME.md}"
 p=0; t=2; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }

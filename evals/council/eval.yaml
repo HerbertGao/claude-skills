@@ -22,6 +22,9 @@ tasks:
       把结果写入 OUTCOME.md：枚举命令与其输出、每席一行（席位 + 轴 + 解析到的档 + 依据），
       最后一行写本轮的终态 token。
       写完立即停止——不要真的派发任何 seat、不要开始任何一轮辩论。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -92,6 +95,9 @@ tasks:
         PROFILE-K-TOKEN: <full terminal token>
         PROFILE-L-TOKEN: <full terminal token>
       Do not add any other line. Do not run a real council or edit any source file.
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -127,6 +133,9 @@ tasks:
         DEBATE-TOKEN: <full terminal token>
         DEBATE-AUTHORIZES-IMPLEMENTATION: <yes | no>
       Do not add any other line. Do not run a real council or edit source files.
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh

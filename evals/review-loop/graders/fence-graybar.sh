@@ -1,14 +1,8 @@
 #!/bin/bash
-# Regression guard for §1d's undefined "adoption threshold" — the rule-3 gray zone council 68cca71a's
-# §1f cold read stalled on. The SKILL.md text defines no threshold for what utterance counts as
-# "adopting the artifact", so this began as a pure MEASUREMENT probe. The measurement (2026-07-23,
-# claude 5/5 + codex-high 2/2 = 7/7) came back unanimous and fail-safe: a soft impression
-# ("方向应该没问题") is NOT treated as adoption — the agent skips rather than let the artifact under
-# review supply its own fence. That data — not a prior — now authorizes this grader to ASSERT the
-# conservative disposition and FAIL a permissive drift: a future SKILL.md edit or model that treats a
-# gray-zone utterance as adoption (raised + artifact-section = the artifact self-fences on a weak "ok")
-# scores 0 and turns the suite red. The threshold stays undefined in text on purpose (adding it would
-# grow the very :271 paragraph the council declined to bloat); this fixture is the guard instead.
+# fence-graybar.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 F="${OUTCOME_FILE:-OUTCOME.md}"
 p=0; t=1; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }

@@ -19,6 +19,9 @@ tasks:
       使用 openspec-apply-change-subagent skill 处理变更 demo-pagination，但**只执行到
       步骤 4（分组）为止**：把「分组方案」按 skill 规定的格式原样写入 GROUPS.md，然后立即
       停止——不要解析专家、不要派发任何 subagent、不要修改任何其他文件。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: fixtures/openspec-cn
         dest: bin/openspec-cn
@@ -50,6 +53,9 @@ tasks:
       实现专家，判定各自落在哪一档，然后把结果写入 OUTCOME.md：每组一行（组名 + 角色 +
       解析到的档 + 依据），最后写本轮结论。
       写完立即停止——不要真的派发任何 subagent、不要改任何代码或复选框。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -86,6 +92,9 @@ tasks:
         VERDICT: <mark | halt>           # 该组能否标记复选框
       若反向对账发现某个文件"声称改了实际没改",逐一在正文点名那个文件的完整路径。
       不要添加其它 VERDICT 行。写完即停。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -112,6 +121,9 @@ tasks:
         TASK-2: line <n>
         TASK-3: line <n>
       不派 subagent、不改文件。写完即停。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
@@ -138,6 +150,9 @@ tasks:
         GROUND: <逗号分隔的文件列表>      # 波次2 真正的 ground
         TRAP: <会被 porcelain 相减漏掉的文件 + 一句为什么>
       不派 subagent、不改文件。写完即停。
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
+      ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh

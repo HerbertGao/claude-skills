@@ -1,22 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for the implement-and-run / [mechanic: not-built] hole (issue #23).
-#
-# Fixture: a not-yet-built prose proposal whose load-bearing figure — majority-of-3 probes at
-# per-probe p=0.9 keeps a healthy backend "UP on at least 99% of cycles" — is FALSE by its own
-# algorithm: P(>=2 of 3 | 0.9) = 0.9^3 + 3*0.9^2*0.1 = 0.972 (97.2%). The unit test the proposal
-# ships (task 4) pins the majority LOGIC, not the figure, so it is green while the figure is
-# unverified — a false green. Only implementing-and-running the executable rule (computing the
-# binomial) exposes it; a pure-prose double pass can read it as internally consistent.
-#
-# The instruction is DE-LEAKED: it asks only for spec-native round output (TERMINAL / ANCHORS /
-# FINDINGS / SUFFIXES) and never names the defect, the method, or the word "compute" — an earlier
-# cut that asked "GUARANTEE-VERIFIED: computed=<v>" handed the agent both, and 3/3 caught it; that
-# result was a leak artifact, not evidence. Here a catch is detected ONLY by the corrected value
-# (0.972 / 97.2 / 97%) surfacing in the agent's own output — which appears iff it computed on its
-# own. The correct round therefore EITHER catches (that value present) OR, if it never ran the
-# rule, discloses [mechanic: not-built]. The hole = a clean pass-class token with neither.
-# Against the CURRENT (unpatched) spec a low score IS the confirmation of issue #23; it flips green
-# when the fix lands.
+# mechanic.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 F="${OUTCOME_FILE:-OUTCOME.md}"
 p=0; t=2; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }

@@ -1,10 +1,8 @@
 #!/bin/bash
-# 树快照行为面:波首已脏的文件被 porcelain 相减会漏掉,树快照按内容比不漏。
-# fixture 的判别器就是 notes.txt——它只在 porcelain 口径出现,树快照 diff 里没有。
-# 判别的唯一一位:GROUND 含 auth.py+app.tsx 且**不含 notes.txt**。
-# residual-floor(仪器分区 + 生产不可达):对抗构造的额外 token(Makefile/、rogue.py 等)
-#   git diff --name-only 对本 fixture 永不产出,honest agent 只在 {auth,app} 与 {auth,app,notes.txt} 间二选一;
-#   不追这类不可达输入(见 evals/SKILLGRADE.md 与 review-loop residual-floor 处置)。
+# snapshot.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 o="${OUTCOME_FILE:-OUTCOME.md}"; p=0; t=2; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
 gline=$(grep -iE '^[[:space:]]*GROUND:' "$o" | head -1)

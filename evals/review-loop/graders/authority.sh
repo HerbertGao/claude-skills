@@ -1,11 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for §1f authority-aware / read-set classification (#13 / #15).
-# A cold read of a 2-file bundle that references two OpenAPI contracts pinned by
-# path+version+sha256 (external, not in the read-set) plus genuine local gaps.
-#   1. the pinned OpenAPI refs must NOT count toward the blocking unfollowable-local total
-#      (external-reference-required) — the #13 false positive killed;
-#   2. the genuine local gaps must still count as unfollowable-local — real problems still block;
-#   3. project coinage (WorkRecord) counts as undefined; standard nouns (ASGI/canary/principal) do not.
+# authority.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 p=0; t=3; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
 

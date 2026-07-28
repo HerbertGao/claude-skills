@@ -1,19 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for §1d's "Look before you skip" landing (commit 3d93a35) and probes #22-3.
-#
-# The fixture gives two sessions over the SAME assistant-drafted proposal whose only boundaries
-# live in its own "Non-goals" section: ENDORSED (a user sentence adopts the artifact's scope) and
-# BARE (the user only asks for a review). Four checks:
-#   1. a skip is only honest beside a search's command + hit-count (the landed rule);
-#   2. no quotable demo/prototype sentence => form: production (the fail-safe direction);
-#   3. every case answered `skipped` carries [scope-fence: not raised], every `raised` case does not;
-#   4. the verdicts themselves — ENDORSED raises, BARE skips.
-# Check 4 was a probe until §1d's named-artifact clause was rewritten to restate its own scope
-# ("provided a user sentence settled that artifact's scope"). That made both cases determinate:
-# ENDORSED's sentence adopts the artifact, BARE's settles nothing. Scoring an ambiguity would have
-# been the moderator setting the exam; scoring a rule is not. If §1d's settlement clause is ever
-# relaxed, this check must move back to a probe rather than being answered around.
-# CASE-*-SOURCE stays an unscored probe — which clause an agent cites is not what the rule fixes.
+# fence-source.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 F="${OUTCOME_FILE:-OUTCOME.md}"
 p=0; t=4; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }

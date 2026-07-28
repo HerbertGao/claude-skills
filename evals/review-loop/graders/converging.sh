@@ -1,9 +1,8 @@
 #!/bin/bash
-# Grades OUTCOME.md for the converging-with-regressions Termination exception (#14).
-# CASE A: count strictly drops AND no requirement recurs -> must CONTINUE (not NOT-CONVERGED).
-# CASE B: count drops too, but a requirement recurs -> must fire NOT-CONVERGED.
-# The discriminator is requirement-recurrence read from prose (no native IDs), which is the
-# whole point: a count-only reading would continue on both.
+# converging.sh — 评分逻辑见代码；**判据与预期答案写在 ../GRADERS.md**，不写在这里。
+# 原因：skillgrade 的 prepareTempTaskDir 会把整个 `graders/` 目录拷进每个 trial 的工作区，
+# 所以 grader 头注释里的任何预期答案 = 递给被考者的答案纸（2026-07-27 实测：有 trial 读了、
+# 如实披露、拿了满分）。头注释保持机械，理由搬到不进工作区的 GRADERS.md。
 p=0; t=2; cks=""
 add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
 
