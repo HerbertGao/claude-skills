@@ -17,7 +17,7 @@ HerbertGao 的自托管 AI coding skills 仓库。三个对抗式质量控制 sk
 | 依赖 | 谁需要 | 装法 | 缺了会怎样 |
 | --- | --- | --- | --- |
 | [agency-agents](https://github.com/msitarzewski/agency-agents) | 三个 skill 的专家/reviewer catalog(自己 clone、控制版本,skill 只读) | `git clone https://github.com/msitarzewski/agency-agents ~/.agency-agents` | review-loop / opsx 退到内嵌浓缩 prompt(专家更弱,终态封顶);council 凑不齐真专家就 `STOPPED` |
-| [ponytail](https://github.com/DietrichGebert/ponytail) | 推荐,非必需(主 agent 的 YAGNI 精简纪律) | 见其 README(Claude Code / Codex 有包装);无插件机制的环境把 persona 粘进全局指令文件 | 主 agent 日常写码失去精简约束;skill 内部已内嵌该阶梯,不依赖它 |
+| [ponytail](https://github.com/DietrichGebert/ponytail) | 推荐,非必需(主 agent 的 YAGNI 精简纪律) | 见其 README(Claude Code / Codex 有包装);无插件机制的环境把 persona 粘进全局指令文件 | 主 agent 日常写码失去精简约束;skill 内部已内嵌完整阶梯(rung 1「这东西该不该存在」落在 §1e 的 `yagni:`,rung 2–7 落在 §3 的 fix spec),不依赖它 |
 | `openspec-cn` CLI | 仅 opsx | 自行安装(不附带) | opsx 无法运行 |
 
 ## 安装
