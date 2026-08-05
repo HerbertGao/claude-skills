@@ -65,8 +65,8 @@ codex plugin add opsx@herbertgao-skills-codex
 
 | Skill | Claude Code plugin 版 | 通用版(npx) |
 | --- | --- | --- |
-| review-loop | `subagent_type` + Codex rescue lane | 第三审查槽换成平台中立的 `Independent Reviewer` |
-| council | Claude 审计模式 + 能力不足降 advisory | 平台能力路由,按证据能力出 `CONVERGED` / `ADVISORY` |
+| review-loop | tool-less CR/RC lanes + `codex:codex-rescue` + bundled redactor | 平台中立的 tool-less reviewer + 同步 redactor |
+| council | tool-less `council:seat` + Claude 审计 + safe-check/redactor | tool-less seat route + 同步 safe-check/redactor |
 | opsx | `general-purpose` subagent | 按 catalog 源路径 + 角色名解析 |
 
 语言约定:`council` / `review-loop` 全线英文(避免中英孪生漂移);`opsx` 全线中文(配 openspec-cn)。

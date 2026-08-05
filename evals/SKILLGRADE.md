@@ -90,6 +90,8 @@ npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
 4. **advisory-debate-shape** — 验证弱 provenance 下仍保留 opposing-only unopposed、DA、全席 cross-exam、DA-final、人类价值裁决与 minority report
 5. **incumbent-routing** — 验证已有草稿时按“做决策”与“修到通过”的终点分流，并阻断 unresolved 后的改稿 handoff
 6. **incumbent-decision** — 验证 neutral brief adoption、incumbent-blind 首轮、freeze/reveal 顺序、同准则比较、零候选诚实披露及既有终态 token
+7. **trust-execution-boundary** — 验证 council 不执行 persona/seat 提供的命令，越界检查保持 `unlookupable`，并实际运行 safe-check/redactor 检查 raw sentinel 不外泄
+8. **confidentiality-boundary** — 验证 review-loop 只接收生产者脱敏后的 canonical evidence，安全证据缺失时不得通过，并实际运行 bundled redactor
 
 ### Grader
 

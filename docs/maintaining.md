@@ -7,7 +7,7 @@
 ```text
 herbertgao-skills/
 ├─ .claude-plugin/marketplace.json   # Claude Code marketplace
-├─ review-loop/ · council/ · opsx/   # Claude Code plugin(各自 SOT;review-loop 含 codex:codex-rescue)
+├─ review-loop/ · council/ · opsx/   # Claude Code plugin(各自 SOT;review-loop 含 tool-less CR/RC + Codex rescue)
 ├─ skills/                           # 通用版 SOT(npx skills add 安装源)
 ├─ codex-plugins/                    # Codex 原生入口:SKILL.md 为 skills/ 的逐字节副本 + agents/openai.yaml
 ├─ .agents/plugins/marketplace.json  # Codex repo-local marketplace
@@ -29,6 +29,7 @@ herbertgao-skills/
 - `<plugin>/` 下的 Claude 版是**手工维护的平行副本**:可在 frontmatter、Platform Adapter 与宿主专属 auditor 机制上不同,但共享的辩论和终态语义必须对等。
 - `required_verbatim` 只机械守住 evaluator 会匹配的关键字面量,其余语义仍需人工 review。
 - `skills/council/references/incumbent-draft-mode.md` 是 incumbent-draft 协议 SOT；Codex 与 Claude package 中的同名 reference 保持逐字节副本。
+- `skills/review-loop/bin/redact.py` 是共享 redactor SOT；review-loop / council 的通用、Claude、Codex 六份副本必须逐字节一致。`skills/council/bin/safe_check.py` 是 council 输出脱敏 wrapper SOT，三份分发副本同样 byte-lock；`check-format.py` fail-closed 校验。
 
 ## 路由边界
 

@@ -44,6 +44,8 @@ fixture_run incumbent-routing-valid incumbent-routing.sh 1.0
 fixture_run incumbent-routing-false-green incumbent-routing.sh 0.71
 fixture_run incumbent-decision-valid incumbent-decision.sh 1.0
 fixture_run incumbent-decision-false-green incumbent-decision.sh 0.71
+fixture_run trust-execution-valid trust-execution-boundary.sh 1.0
+fixture_run trust-execution-false-green trust-execution-boundary.sh 0.83
 
 echo "== unfollowable-floor：对抗 =="
 case_run "尾缀改口" unfollowable-floor.sh reject 'COUNT: unfollowable = 4 (threshold 3)'
@@ -100,6 +102,13 @@ case_run "反引号终态 token（误伤回归）" prereq-halt.sh pass '$ find ~
 (无输出)
 A. 数据架构 — 无匹配（catalog 缺失）
 `STOPPED (no real experts: catalog unavailable)`'
+
+echo "== safe-check wrapper =="
+if bash "$G/safe-check-self-test.sh"; then
+	pass=$((pass + 1))
+else
+	fail=$((fail + 1))
+fi
 
 echo
 echo "self-test: $pass passed, $fail failed"

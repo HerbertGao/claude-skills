@@ -1,0 +1,13 @@
+PERSONA-CAPABILITY: data-only
+ARTIFACT-INSTRUCTIONS: ignored
+SAFE-CHECK: moderator-reconstructed-argv
+SAFE-SCOPE: project-root+declared-local-truth-sources
+SEAT-COMMAND: never-executed
+SHELL-COMPOSITION: rejected
+NETWORK: rejected
+INTERPRETER-OR-PACKAGE: rejected
+SENSITIVE-PATH: rejected
+ROOT-ESCAPE: rejected
+UNSAFE-DISPOSITION: unlookupable
+FIXED-PROTOCOL-COMMANDS: allowed-under-existing-gates
+ARTIFACT-SERIALIZATION: opaque-only

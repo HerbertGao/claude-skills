@@ -60,16 +60,18 @@ def _unique_json_object(pairs):
 def loads_json_unique(body: str):
     try:
         return json.loads(body, object_pairs_hook=_unique_json_object)
-    except json.JSONDecodeError:
-        raise
+    except (json.JSONDecodeError, ValueError) as err:
+        raise ValueError(f"invalid JSON: {err}") from err
 
 
-def load_json_unique(path: str):
+def load_contract_json():
     try:
-        with open(path, encoding="utf-8") as fh:
+        with open(CONTRACT, encoding="utf-8") as fh:
             return json.load(fh, object_pairs_hook=_unique_json_object)
-    except (OSError, json.JSONDecodeError):
-        raise
+    except OSError as err:
+        raise RuntimeError(f"cannot read JSON {CONTRACT}: {err}") from err
+    except (json.JSONDecodeError, ValueError) as err:
+        raise ValueError(f"invalid JSON in {CONTRACT}: {err}") from err
 
 
 def _read_utf8(path: str) -> str:
@@ -312,11 +314,36 @@ def check_description_lengths(files: dict, limit: int = 1024) -> list:
     return fails
 
 
+def check_toolless_agent_frontmatter(files: dict) -> list:
+    """Tool-less security lanes must declare an exactly empty tool list in YAML."""
+    paths = (
+        "council/agents/seat.md",
+        "review-loop/agents/sandbox-reviewer.md",
+        "review-loop/agents/cold-reader.md",
+        "review-loop/agents/root-cause-analyst.md",
+        "review-loop/agents/simplicity-lens.md",
+    )
+    fails = []
+    for path in paths:
+        body = files.get(path)
+        if body is None:
+            fails.append(f"missing tool-less agent: {path}")
+            continue
+        frontmatter = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", body, re.DOTALL)
+        if frontmatter is None:
+            fails.append(f"{path}: missing YAML frontmatter")
+            continue
+        tools = re.findall(r"^tools:\s*(.*?)\s*$", frontmatter.group(1), re.MULTILINE)
+        if tools != ["[]"]:
+            fails.append(f"{path}: tools must be declared exactly once as [] (observed {tools!r})")
+    return fails
+
+
 def check_twins(files: dict) -> list:
-    """Every universal skill file ships a byte-identical Codex copy."""
+    """Every universal skill artifact ships a byte-identical Codex copy."""
     fails = []
     sources = sorted(f for f in files
-                     if re.fullmatch(r"skills/[^/]+/(?:SKILL\.md|references/.+)", f))
+                     if re.fullmatch(r"skills/[^/]+/(?:SKILL\.md|references/.+|bin/.+)", f))
     for src in sources:
         _, name, tail = src.split("/", 2)
         pattern = rf"codex-plugins/[^/]+/skills/{re.escape(name)}/{re.escape(tail)}"
@@ -327,6 +354,45 @@ def check_twins(files: dict) -> list:
             if files[twin] != files[src]:
                 fails.append(f"twin drift: {twin} is not a byte-copy of {src}")
     return fails
+
+
+def check_review_redactor_copies(files: dict) -> list:
+    """Security-sensitive redactor logic must be identical in every distribution."""
+    paths = (
+        "skills/review-loop/bin/redact.py",
+        "review-loop/bin/redact.py",
+        "codex-plugins/review-loop/skills/review-loop/bin/redact.py",
+        "skills/council/bin/redact.py",
+        "council/bin/redact.py",
+        "codex-plugins/council/skills/council/bin/redact.py",
+    )
+    missing = [path for path in paths if path not in files]
+    if missing:
+        return [f"missing redactor copy: {path}" for path in missing]
+    source = files[paths[0]]
+    return [
+        f"redactor drift: {path}"
+        for path in paths[1:]
+        if files[path] != source
+    ]
+
+
+def check_council_safe_check_copies(files: dict) -> list:
+    """Council's output-sanitizing wrapper must not drift across distributions."""
+    paths = (
+        "skills/council/bin/safe_check.py",
+        "council/bin/safe_check.py",
+        "codex-plugins/council/skills/council/bin/safe_check.py",
+    )
+    missing = [path for path in paths if path not in files]
+    if missing:
+        return [f"missing council safe-check copy: {path}" for path in missing]
+    source = files[paths[0]]
+    return [
+        f"council safe-check drift: {path}"
+        for path in paths[1:]
+        if files[path] != source
+    ]
 
 
 def check_council_reference_copies(files: dict) -> list:
@@ -687,6 +753,20 @@ def _select_consumer(body: str, selector: str):
     return value, None
 
 
+def _read_consumer_surface(rel: str, files: dict) -> str | None:
+    body = files.get(rel)
+    if body is not None:
+        return body
+    candidate = os.path.realpath(os.path.join(ROOT, rel))
+    if os.path.commonpath((ROOT, candidate)) != ROOT or not os.path.isfile(candidate):
+        return None
+    try:
+        with open(candidate, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
 def check_consumer_surfaces(contract: dict, files: dict) -> list:
     fails = []
     surfaces = {name: spec for name, spec in contract.get("consumer_surfaces", {}).items()
@@ -713,7 +793,7 @@ def check_consumer_surfaces(contract: dict, files: dict) -> list:
                 fails.append(f"[{name}] malformed consumer target {target!r}")
                 continue
             rel, selector = target["file"], target["selector"]
-            body = files.get(rel)
+            body = _read_consumer_surface(rel, files)
             if body is None:
                 fails.append(f"[{name}] consumer surface does not exist: {rel}")
                 continue
@@ -761,7 +841,7 @@ def check_families(contract: dict, files: dict) -> list:
 
 def load_markdown() -> dict:
     files = {}
-    exts = (".md", ".yaml", ".yml", ".json")   # the entry shells ship too; residue in one ships with it
+    exts = (".md", ".yaml", ".yml", ".json", ".py")  # shipped skill artifacts and metadata
     for root in ("skills", "council", "opsx", "review-loop", "codex-plugins", "README.md",
                  ".claude-plugin", ".agents"):
         path = os.path.join(ROOT, root)
@@ -783,8 +863,8 @@ def load_markdown() -> dict:
 
 def main() -> int:
     try:
-        contract = load_json_unique(CONTRACT)
-    except (json.JSONDecodeError, ValueError) as err:
+        contract = load_contract_json()
+    except (RuntimeError, ValueError) as err:
         print(f"check-format: contract JSON is invalid: {err}")
         return 1
     files = load_markdown()
@@ -861,7 +941,10 @@ def main() -> int:
         fails.append("forbidden_everywhere.regex_patterns is missing/empty — the collocation scan is disarmed")
     fails += check_families(contract, files)
     fails += check_description_lengths(files)
+    fails += check_toolless_agent_frontmatter(files)
     fails += check_twins(files)
+    fails += check_review_redactor_copies(files)
+    fails += check_council_safe_check_copies(files)
     fails += check_council_reference_copies(files)
     fails += check_claude_copies(files)
     fails += check_council_header_parser(files)
@@ -949,15 +1032,71 @@ def self_test() -> int:
             ok = False
         print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
 
+    tool_agent_paths = (
+        "council/agents/seat.md",
+        "review-loop/agents/sandbox-reviewer.md",
+        "review-loop/agents/cold-reader.md",
+        "review-loop/agents/root-cause-analyst.md",
+        "review-loop/agents/simplicity-lens.md",
+    )
+    tool_agent_files = dict.fromkeys(tool_agent_paths, "---\ntools: []\n---\n# Agent\n")
+    tool_agent_cases = [
+        ("tool-less frontmatter passes", tool_agent_files, 0),
+        ("non-empty tool list fails", {**tool_agent_files, tool_agent_paths[0]: "---\ntools: [Read]\n---\n"}, 1),
+        ("missing tool-less agent fails", {path: body for path, body in tool_agent_files.items() if path != tool_agent_paths[0]}, 1),
+    ]
+    for label, fs, expect in tool_agent_cases:
+        got = 1 if check_toolless_agent_frontmatter(fs) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
     # check_twins is a separate code path main() calls; a self-test that only drives
     # check() prints a green tick over code nothing exercised.
     twin_cases = [
         ("twins match", {"skills/s/SKILL.md": "x", "codex-plugins/p/skills/s/SKILL.md": "x"}, 0),
         ("twin content drifted", {"skills/s/SKILL.md": "x", "codex-plugins/p/skills/s/SKILL.md": "y"}, 1),
         ("twin missing entirely", {"skills/s/SKILL.md": "x"}, 1),
+        ("bin twin matches", {"skills/s/bin/redact.py": "x", "codex-plugins/p/skills/s/bin/redact.py": "x"}, 0),
+        ("bin twin drifted", {"skills/s/bin/redact.py": "x", "codex-plugins/p/skills/s/bin/redact.py": "y"}, 1),
     ]
     for label, fs, expect in twin_cases:
         got = 1 if check_twins(fs) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
+    redactor_paths = (
+        "skills/review-loop/bin/redact.py",
+        "review-loop/bin/redact.py",
+        "codex-plugins/review-loop/skills/review-loop/bin/redact.py",
+        "skills/council/bin/redact.py",
+        "council/bin/redact.py",
+        "codex-plugins/council/skills/council/bin/redact.py",
+    )
+    redactor_cases = [
+        ("redactor copies match", dict.fromkeys(redactor_paths, "x"), 0),
+        ("Claude redactor drifted", {**dict.fromkeys(redactor_paths, "x"), redactor_paths[1]: "y"}, 1),
+        ("Claude redactor missing", dict.fromkeys((redactor_paths[0], redactor_paths[2]), "x"), 1),
+    ]
+    for label, fs, expect in redactor_cases:
+        got = 1 if check_review_redactor_copies(fs) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
+    safe_check_paths = (
+        "skills/council/bin/safe_check.py",
+        "council/bin/safe_check.py",
+        "codex-plugins/council/skills/council/bin/safe_check.py",
+    )
+    safe_check_cases = [
+        ("safe-check copies match", dict.fromkeys(safe_check_paths, "x"), 0),
+        ("Claude safe-check drifted", {**dict.fromkeys(safe_check_paths, "x"), safe_check_paths[1]: "y"}, 1),
+        ("safe-check copy missing", dict.fromkeys(safe_check_paths[:2], "x"), 1),
+    ]
+    for label, fs, expect in safe_check_cases:
+        got = 1 if check_council_safe_check_copies(fs) else 0
         if got != expect:
             ok = False
         print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
@@ -1126,7 +1265,7 @@ def self_test() -> int:
         ok = False
     print(f"  {'✅' if got == 1 else '❌'} {'README literals outside council section fail':<48} caught={bool(got)}  want=True")
 
-    parsed_contract = load_json_unique(CONTRACT)
+    parsed_contract = load_contract_json()
     advisory = next(rule for rule in parsed_contract["families"] if "ADVISORY" in rule["regex"])
     family_contract = {"families": [advisory]}
     family_cases = [

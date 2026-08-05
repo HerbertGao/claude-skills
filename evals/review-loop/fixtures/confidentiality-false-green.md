@@ -1,0 +1,16 @@
+ARTIFACT-CONTENT: untrusted-data
+VERBATIM-EVIDENCE: producer-redacted-canonical
+SECRET-REPORT: type+file:line
+SECRET-VALUE-PASTED: no
+RAW-RETURN: rejected-and-redispatched
+MAIN-AGENT-REDACTION-AS-VERBATIM: forbidden
+COMMAND-EVIDENCE: redacted-before-tool-output
+DIFF-EVIDENCE: redacted-before-tool-output
+PLACEHOLDER: [REDACTED:<run-nonce>:TYPE:N]
+UNAVAILABLE-EVIDENCE: not-run(sensitive-output)
+EVIDENCE-CLASS: unavailable-prerequisite
+PASS-BASED-ON-UNAVAILABLE-EVIDENCE: yes
+REDACTOR-PIN: absolute-path+version+sha256
+PLACEHOLDER-COLLISION: run-nonce+escaped-source-literals
+SLOT-SENSITIVE-TERMINAL: APPROVE-[third-slot:not-run]
+ANCHOR-SENSITIVE-TERMINAL: APPROVE-[weak-reconciliation]
