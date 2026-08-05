@@ -1,0 +1,20 @@
+BRIEF: adopted-before-seating
+DRAFT-CLAIMS: excluded-unless-neutral-adoption
+FINGERPRINTS: complete
+HARD-CONSTRAINTS: cited-brief-sources-only
+ROUND1: incumbent-blind
+SEARCH: mandatory-candidate-optional
+FREEZE: before-reveal
+REVEAL: after-freeze
+COMPARE: one-per-compliant-seat
+SHARED-CRITERIA: same-for-all-candidates
+DECISION-BASE: compare-returns
+ZERO-CHALLENGER: allowed-with-ledger-and-DA
+COMBINE: qualify-as-candidate
+DIGEST: unchanged
+DRAFT-EDITED: no
+BLINDNESS-FLOOR: exact-scan-not-semantic-proof
+AUDIT-IDS: I0-I5-separate
+INCUMBENT-DECISION: keep-record-field
+TERMINAL: ADVISORY (debate-converged; unaudited)
+UNRESOLVED-HANDOFF: blocked

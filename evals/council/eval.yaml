@@ -4,7 +4,8 @@ skill: ../../skills/council
 
 defaults:
   agent: command
-  command: bash bin/run-codex.sh   # 假 HOME 隔离（codex 认证经 CODEX_HOME 存活，无需 API key）
+  # 假 HOME 隔离；Codex 认证经 CODEX_HOME 保留。
+  command: bash bin/run-codex.sh
   provider: local
   trials: 5
   timeout: 1800
@@ -41,7 +42,8 @@ tasks:
   # 可执行性验收：§1f 冷读 skills/council/SKILL.md，unfollowable ≤ 3（诚实标注为判断/floor 的规则不计）。
   # 未经写作模式重写的基线约 11–18，重写后实测 0–1。计数随机 → trials:5 / threshold:0.8 是回归对照线。
   - name: unfollowable-floor
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是一个 agent skill。对它做一次 §1f 式**冷读**（只读这一个文件，不读 git 历史/其他文件/网络）。
       你是一个必须把这些规则当作可执行 LLM agent 去执行的新读者。一条规则只有在你**确实无法满足**时才算
@@ -51,6 +53,9 @@ tasks:
         COUNT: unfollowable = <n>
       写完立即停止。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: ../../skills/council/SKILL.md
         dest: SKILL.md
     graders:
@@ -147,4 +152,89 @@ tasks:
     graders:
       - type: deterministic
         run: bash graders/advisory-debate-shape.sh
+        weight: 1.0
+
+  # Route by requested terminal, not by whether a draft exists.
+  - name: incumbent-routing
+    threshold: 1.0
+    trials: 3
+    instruction: |
+      Read ./SKILL.md, ./references/incumbent-draft-mode.md, and
+      ./incumbent-routing-cases.md. Apply the routing boundary to all five
+      cases.
+      Write OUTCOME.md with exactly these lines and no others:
+        ROUTE-A: <council-greenfield | council-incumbent-draft | review-loop>
+        ROUTE-B: <council-greenfield | council-incumbent-draft | review-loop>
+        ROUTE-C: <council-greenfield | council-incumbent-draft | review-loop>
+        ROUTE-D: <council-then-review-loop | review-loop | council-only>
+        ROUTE-E: <stop-after-council-unresolved | council-then-review-loop>
+        COUNCIL-EDITS-DRAFT: <yes | no>
+      Do not run a council or edit any source file.
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**。
+    workspace:
+      - src: bin/run-codex.sh
+        dest: bin/run-codex.sh
+        chmod: "+x"
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
+      - src: ../../skills/council/SKILL.md
+        dest: SKILL.md
+      - src: ../../skills/council/references/incumbent-draft-mode.md
+        dest: references/incumbent-draft-mode.md
+      - src: fixtures/incumbent-routing-cases.md
+        dest: incumbent-routing-cases.md
+    graders:
+      - type: deterministic
+        run: bash graders/incumbent-routing.sh
+        weight: 1.0
+
+  # Replay the incumbent-blind protocol, including honest zero-challenger
+  # handling.
+  - name: incumbent-decision
+    agent: command
+    command: bash bin/run-pi.sh
+    threshold: 1.0
+    trials: 3
+    instruction: |
+      Read ./SKILL.md, ./references/incumbent-draft-mode.md, and
+      ./incumbent-decision-script.md. Apply the incumbent-draft protocol to the
+      replay. Write OUTCOME.md with exactly these lines and no others:
+        BRIEF: <adopted-before-seating | adopted-after-seating>
+        DRAFT-CLAIMS: <excluded-unless-neutral-adoption | hard-requirements>
+        FINGERPRINTS: <complete | incomplete>
+        HARD-CONSTRAINTS: <cited-brief-sources-only | draft-claims-promoted>
+        ROUND1: <incumbent-blind | draft-visible>
+        SEARCH: <mandatory-candidate-optional | mandatory-candidate-mandatory>
+        FREEZE: <before-reveal | after-reveal>
+        REVEAL: <after-freeze | before-freeze>
+        COMPARE: <one-per-compliant-seat | optional>
+        SHARED-CRITERIA: <same-for-all-candidates | candidate-specific>
+        DECISION-BASE: <compare-returns | blind-search-returns>
+        ZERO-CHALLENGER: <allowed-with-ledger-and-DA | fabricate-one>
+        COMBINE: <qualify-as-candidate | compromise-default>
+        DIGEST: <unchanged | changed>
+        DRAFT-EDITED: <yes | no>
+        BLINDNESS-FLOOR: <exact-scan-not-semantic-proof | perfect-proof>
+        AUDIT-IDS: <I0-I5-separate | reused-A-ids>
+        INCUMBENT-DECISION: <keep-record-field | omitted>
+        TERMINAL: <full terminal token>
+        UNRESOLVED-HANDOFF: <blocked | allowed>
+      Do not dispatch workers or edit source files.
+
+      `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**。
+    workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
+      - src: ../../skills/council/SKILL.md
+        dest: SKILL.md
+      - src: ../../skills/council/references/incumbent-draft-mode.md
+        dest: references/incumbent-draft-mode.md
+      - src: fixtures/incumbent-decision-script.md
+        dest: incumbent-decision-script.md
+    graders:
+      - type: deterministic
+        run: bash graders/incumbent-decision.sh
         weight: 1.0

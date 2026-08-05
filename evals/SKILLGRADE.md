@@ -2,7 +2,7 @@
 
 本仓库用 [skillgrade](https://www.npmjs.com/package/skillgrade) 对 agent skill 做行为验证。每个 skill 在 `evals/<skill>/` 下有自己的 `eval.yaml`。
 
-现有 eval：`council`（prereq-halt / unfollowable-floor / advisory-routing / advisory-debate-shape）、`opsx`（reconcile-false-green / checkbox-locate / snapshot-not-subtract，守步骤 6 的双向对账、定位链、树快照三处最脆弱机制）。每套 grader 都带 `graders/self-test.sh`（fixture + 假绿探针，改 grader 前先跑）。
+现有 eval 位于 `council`、`opsx` 与 `review-loop`。默认测试矩阵优先覆盖 Codex 和 Pi；每套 grader 都带 `graders/self-test.sh`（fixture + 假绿探针，改 grader 前先跑）。
 
 ## 安装
 
@@ -29,21 +29,32 @@ npx skillgrade --eval=advisory-routing --ci --threshold=1.0
 
 `eval.yaml` 的 `defaults.agent` 指定默认 agent。本仓库的 eval 需要能写文件（OUTCOME.md），因此不是所有 agent 都兼容。
 
-| agent | 命令 | 能写文件 | 兼容性 |
-|---|---|---|---|
-| `command`（默认，走 `run-codex.sh`） | `codex exec --sandbox workspace-write` | ✓ | ✓ |
-| `claude` | `claude -p --dangerously-skip-permissions` | ✓ | ✓ |
-| `command` + trae-cli wrapper | `trae-cli -p` | ✗（print 模式只输出，不调 Write/Edit） | ✗ |
-| `command` + agy wrapper | `agy --prompt --dangerously-skip-permissions` | ✓ | ✓ |
+| agent | 命令 | 能写文件 | 优先级 |
+| --- | --- | --- | --- |
+| `command` + Codex wrapper | `codex exec --sandbox workspace-write` | ✓ | 主测试宿主 |
+| `command` + Pi wrapper | `pi --print --no-session` | ✓ | 主测试宿主 |
+| `claude` | `claude -p --dangerously-skip-permissions` | ✓ | 可选兼容性复测 |
+| `command` + trae-cli wrapper | `trae-cli -p` | ✗ | 不兼容写文件型 eval |
+| `command` + agy wrapper | `agy --prompt --dangerously-skip-permissions` | ✓ | 可选 |
 
 ### 用不同 agent 跑
 
 ```bash
-# codex（默认）
+# Codex（该 task 的默认宿主）
 npx skillgrade --eval=advisory-routing --trials=1 --provider=local
 
-# claude
-npx skillgrade --eval=advisory-routing --trials=1 --provider=local --agent=claude
+# Pi（可覆盖任意 task；从当前 Pi 配置读取认证和默认模型）
+npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
+  --agent=command --command="bash bin/run-pi.sh"
+
+# 可选：固定 Pi provider / model / thinking，便于复现实验
+PI_EVAL_PROVIDER=openai PI_EVAL_MODEL=gpt-5.4 PI_EVAL_THINKING=high \
+  npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
+  --agent=command --command="bash bin/run-pi.sh"
+
+# Claude 只保留为有可用账号时的兼容性复测，不属于默认矩阵
+npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
+  --agent=claude
 
 # trae-cli（不兼容写文件型 eval）
 # trae-cli -p 是纯 print 模式，无法在 workspace 中创建 OUTCOME.md
@@ -68,7 +79,8 @@ npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
 - `eval.yaml` — eval 配置（task 定义、workspace 文件映射、grader）
 - `fixtures/` — 输入文件（SKILL.md、host-profiles.md、decision.md 等）
 - `graders/` — 评分脚本（bash，输出 JSON）
-- `bin/run-codex.sh` — codex agent 的启动脚本（做 HOME 隔离）
+- `bin/run-codex.sh` — Codex 启动脚本（做 HOME 隔离）
+- `bin/run-pi.sh` — Pi 启动脚本（保留认证，隔离 HOME，并禁用外部资源）
 
 ### Task 类型
 
@@ -76,6 +88,8 @@ npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
 2. **unfollowable-floor** — 冷读 SKILL.md，统计不可遵守的规则数（≤3）
 3. **advisory-routing** — 给定 host profile，验证 Platform Adapter 的模式路由（audited / advisory / stopped）和 token 判定正确
 4. **advisory-debate-shape** — 验证弱 provenance 下仍保留 opposing-only unopposed、DA、全席 cross-exam、DA-final、人类价值裁决与 minority report
+5. **incumbent-routing** — 验证已有草稿时按“做决策”与“修到通过”的终点分流，并阻断 unresolved 后的改稿 handoff
+6. **incumbent-decision** — 验证 neutral brief adoption、incumbent-blind 首轮、freeze/reveal 顺序、同准则比较、零候选诚实披露及既有终态 token
 
 ### Grader
 
@@ -102,7 +116,8 @@ ls -t $TMPDIR/skillgrade/council/results/*.json | head -1 | xargs cat | python3 
 ## 注意事项
 
 - **必须 cd 到 `evals/<skill>/` 目录运行**，因为 `eval.yaml` 的 `skill:` 和 `workspace:` 路径是相对的
-- codex agent 需要认证（`CODEX_HOME` 默认 `~/.codex`）
-- claude agent 需要认证且未触发限额
-- `advisory-routing` task 的 `threshold: 1.0`（要求 31/31 全对），`advisory-debate-shape` 要求 16/16，其他 task 默认 0.8
+- Codex agent 需要认证（`CODEX_HOME` 默认 `~/.codex`）
+- Pi agent 需要在 `PI_CODING_AGENT_DIR`（默认 `~/.pi/agent`）中已有认证；wrapper 默认使用 `high` thinking，并禁用 context、extensions、skills 与 prompt templates，避免用户配置污染 eval
+- Claude 不再是默认测试依赖；仅在显式兼容性复测时需要认证
+- `advisory-routing`、`advisory-debate-shape`、`incumbent-routing` 与 `incumbent-decision` 都使用 `threshold: 1.0`，协议字段必须全对
 - Codex 在开发过程中可能频繁修改 SKILL.md 和 eval 文件；跑 eval 前确认 working tree 是预期状态

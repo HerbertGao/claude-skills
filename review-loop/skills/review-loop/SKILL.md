@@ -1,29 +1,24 @@
 ---
 name: review-loop
 description: >-
-  Tear apart a written artifact and iterate it to a pass. **Use it when something is already written** —
-  an OpenSpec change, a proposal, a spec, a diff; a pure-prose proposal belongs here too. **Nothing written yet,
-  and the question is "which way should we go" (technology selection / architecture / whether to build)?
-  → that is `council`, not this.**
-  Each round three reviewers run in parallel (Code Reviewer + Reality Checker + Codex — a cross-family
-  reviewer, which is the one distribution the other two cannot supply), their returns are pasted verbatim, findings merge into one triage list, a
-  fixer applies the accepted ones, and the loop re-reviews until a terminal token. Every check reads an artifact
-  the checked party did not author — that is the whole design. Standing counter-pressures: a scope fence (a fix
-  that would add features nobody asked for stops and asks), a simplicity lens (the loop only inserts, so
-  something must count the bloat), a legibility lens (a cold reader, so an iterated review cannot turn a
-  readable document into a patch pile), and a convergence check (if two rounds running find blockers that the
-  loop's own last fix produced, it dispatches a root-cause analyst before giving up (Termination)
-  instead of iterating forever).
-  Triggers: review this change until it passes / find the ship-blockers / keep fixes minimal /
-  对本次提案/变更做对抗性 review 循环 / review 到通过为止 / 避免 review 插入过多无效代码.
-  Pairs with a /goal-style completion harness for long runs; runs standalone without one.
+  Reviews an existing written artifact—an OpenSpec change, proposal, spec,
+  diff, or prose—and iterates it to a terminal pass. On Claude Code, runs
+  Code Reviewer, Reality Checker, and a cross-family Codex reviewer; merges
+  verbatim returns into one triage, applies only accepted fixes, and
+  re-reviews. Enforces scope, simplicity, legibility, evidence independence,
+  and convergence safeguards. Use for “review until it passes,” “find
+  ship-blockers,” minimal-fix adversarial review, and 对提案/变更做对抗性
+  review 循环 / review 到通过为止. Its terminal goal is finding and fixing
+  defects in the artifact, not choosing among architectures. For an architecture
+  decision—even when a draft exists—use council; if both choice and revision
+  are requested, run council first. Skip for a trivial typo or one-line change.
 ---
 
 # review-loop
 
 Tear apart a written artifact and iterate it to a pass. Each round: dispatch reviewers → triage → dispatch fixes → re-review, until a terminal token. For long runs wrap it in a completion harness (`/goal` on Claude Code — last section); optional, and without one the main agent applies the evaluator's predicates to itself.
 
-**Scope.** Something is already written — an OpenSpec change (a spec-driven proposal workflow whose artifacts are markdown change proposals), a proposal, a spec, a diff. A **pure-prose proposal is in scope**: §1b's table comes back naturally empty, §1e applies only its three prose tags, §1f is the lane the round is actually for. A decision with *nothing written yet* is `council`, not this. For a trivial diff — a typo, a one-line fix — skip the loop: one direct review is cheaper and enough.
+**Scope.** Something is already written — an OpenSpec change (a spec-driven proposal workflow whose artifacts are markdown change proposals), a proposal, a spec, a diff. A **pure-prose proposal is in scope**: §1b's table comes back naturally empty, §1e applies only its three prose tags, §1f is the lane the round is actually for. An architecture decision belongs to `council` even when a draft exists; this loop owns review-and-revise-to-pass. If both choice and revision are requested, council decides first and this loop revises against its decision record. For a trivial diff — a typo, a one-line fix — skip the loop: one direct review is cheaper and enough.
 
 ## The evidence rule (read first — it is the shape of every rule below)
 
@@ -32,7 +27,7 @@ The main agent dispatches the reviewers, grades their findings, writes the fixes
 > **A check is only as strong as the artifact it reads. Three tiers, and every gate names its own.**
 
 | the artifact | who makes it | what it proves |
-|---|---|---|
+| --- | --- | --- |
 | **the slot returns** — each reviewer's verdict line + findings list, **pasted verbatim** | the reviewers | the round was dispatched, and these are the findings |
 | **the triage list** — every finding after re-grading and dedup, with severity, location, disposition, **pasted** | the main agent, but *derived* from the returns above and diffable against them | what the round decided, and whether the grading holds |
 | **`Landed:`** — the diff the round's fixes actually produced, **not the ranges the spec aimed at**. On code: `git diff --stat` (its ± counts are ⑭'s operand) or the full diff — bare ranges carry no counts and cannot feed the recompute. **On prose: the changed text itself** — `git diff -U0`'s full hunks, additions and removals both, pasted (the removals are what keep `net:` recomputable on prose) | the fixer's edit | what the loop actually changed, in the same coordinates as next round's findings |
@@ -114,7 +109,7 @@ Dispatch all three slots **in parallel, in one message**. Each prompt is self-co
 **Two identifiers, named apart, because conflating them silently drops a lane through every tier:** the **type-name** is the string a platform would register a lane under (`Code Reviewer`); the **catalog path** is where the file lives (`engineering/engineering-code-reviewer.md`). The catalog's frontmatter `name:` is the *type-name*, not the filename slug. **The table below is a lookup key, not a registry** — it says which string to search the host's subagent list for; it never says the host has it.
 
 | lane | type-name (the string to look up) | catalog path (local tier) |
-|---|---|---|
+| --- | --- | --- |
 | CR | `Code Reviewer` | `engineering/engineering-code-reviewer.md` |
 | RC | `Reality Checker` | `testing/testing-reality-checker.md` |
 | MCE | `Minimal Change Engineer` | `engineering/engineering-minimal-change-engineer.md` |
@@ -125,7 +120,7 @@ Dispatch all three slots **in parallel, in one message**. Each prompt is self-co
 **Read the catalog before you resolve any lane.** The read is the only step of this ladder with a falsifiable artifact: a file either is at that path or it is not, and a tool record says which. "The host has this type registered" is a sentence, and a sentence costs nothing to write — put it first and the halt below is one an agent can talk its way past without ever touching the filesystem.
 
 | step | act | outcome |
-|---|---|---|
+| --- | --- | --- |
 | **1 — resolve** | read the lane's **catalog path** under `~/.agency-agents/` (a git clone of the catalog; nests two levels). Confirm the file's frontmatter `name:` equals the lane's type-name — **ASE excepted: its file reads `Application Security Engineer`; accept that known alias** (the table's type-name is the dispatch string) | no file ⇒ the lane is **unresolved** ⇒ halt, below |
 | **2 — dispatch** | the file is there, so the lane is real. Its type-name is an installed subagent type on this host ⇒ dispatch that subagent natively, marker `[registered]` — **strongest: the host owns the persona and its tool scope**. Otherwise embed the file's body, minus frontmatter, as a `general-purpose` agent's persona, marker `[local: <catalog path>]` | **each marker carries what falsifies it** — the path a reader can stat, or (⑮) the dispatch record that must name the type |
 
@@ -169,7 +164,7 @@ Regression: 1 of 6 (a triage blocker/major quoting text Landed: added) | hits: �
 **Canonical skip strings** — a lane that did not run says so in the string the evaluator matches, and **never the bare word `none`** where a gate reads "no anchor at all":
 
 | line | skip string | when |
-|---|---|---|
+| --- | --- | --- |
 | `Anchors:` | `n/a (0 in-scope categories; weak anchor = the produced-empty CR checklist)` | pure prose |
 | `Scope fence:` | `no full requirement context, skip` | §1d — **only beside the search's command + hit-count** |
 | `Simplicity:` | `no code or prose this round, skip` | §1e |
@@ -206,7 +201,7 @@ Two honesty rules. **The executor sets the anchor strength** — the RC hand-lis
 **Completeness reconciliation.** The table cannot attest itself (prose reviewers satisfice), so set-diff it against an **anchor**. Bidirectional, on `file:line`, mandatory:
 
 | direction | meaning | terminal state |
-|---|---|---|
+| --- | --- | --- |
 | anchor ∖ table | omission — an anchor point absent from the table | `unresolved` |
 | table ∖ anchor | unverified row — a `file:line` in neither the diff nor the anchor | `unresolved`; two possible causes (a fabricated row, or a legitimately-impacted line the anchor missed) — **don't presume which**; settle only after adding or confirming the anchor |
 
@@ -248,7 +243,7 @@ The main agent may **add** specialists per change domain — along exactly two a
 **Two ways to skip a matrix hit, graded apart:**
 
 | skipped because… | grade |
-|---|---|
+| --- | --- |
 | the expert genuinely doesn't exist (not registered, not in the catalog) | not a finding — **disclose it**: the `Augment:` line carries `expert unavailable` **with the grep command and its candidate count pasted**, and the terminal token carries `(<domain>: expert unavailable, generic coverage only)` |
 | the expert was resolvable and you skipped anyway | a **`major` you did not fix** — justify it like any other |
 
@@ -344,7 +339,7 @@ Merge findings from all sources — three slots, anchors, augments, §1e, §1f, 
 **The dispatch table splits by artifact, because "minimal" means opposite things in code and prose.** For code, minimal = the smallest *textual diff* — that discipline prevents scope creep. For prose, the smallest textual diff is an inline caveat at the finding site — **exactly the §1f patch-pile generator**. A prose fix minimizes the *semantic delta* instead.
 
 | fix target | dispatch | minimality metric |
-|---|---|---|
+| --- | --- | --- |
 | code — local bug, single module, mechanical per spec | **MCE** (ladder) | smallest textual diff |
 | code — cross-module / architecture or data-flow rethink / schema or API migration / needs a test strategy | a `general-purpose` subagent with the full context — **never `codex:codex-rescue`**: §1 dispatches it read-only, so it cannot apply a fix; and if it did, next round the Codex slot would review its own family's output, destroying the one distribution it exists to supply | smallest coherent change |
 | prose — mechanical (wording, format, filling in an already-decided design) | main agent edits directly | — |
@@ -380,7 +375,7 @@ Back to §1, three slots in parallel — Codex may recover mid-run: a slot that 
 **The terminal-token table — the single authority. Take the first matching row** — subject to one subordination to the pass gate: a **pass-class row** (token `APPROVE` / `CLEAR` / `APPROVE-DEGRADED`) is a match **only when the pass gate (above) holds**; on a failed gate it is not a match and control falls through to the halt rows below it. Without this, at the cap a gate-failing round with positive `net:` matches the bloat row before `CAPPED` and ships a pass-class token over unresolved blockers — first-match order otherwise lets the lone pass-class row that omits the gate outrank the halt. A row routed through the root-cause step may resolve to its sanctioned continuation instead of its token.
 
 | condition | token |
-|---|---|
+| --- | --- |
 | a lane has no catalog file at its path (**unresolved**, §1) | **`PREREQUISITE-MISSING (<lane> — see README)`** — a hand-back, not a verdict; the user installs the prerequisite (or declines) and the run resumes or ends there |
 | an unadjudicated out-of-scope blocker/major (§1d) | **`OUT-OF-SCOPE-PENDING (N left)`** — no token, and no coverage-gap or degrade suffix (the `[form: …]` advisory still rides per ⑩); **outranks everything, including the cap**. Halt for the user; the harness stops auto-continuing. If the user never replies, the loop stays halted — **no timeout converts silence into consent.** No fence up ⇒ never triggers |
 | `Regression:` ≥1 for **two consecutive rounds**, and **not** converging-with-regressions (defined below the table) | **after the root-cause step (below the table)** → **`NOT-CONVERGED (fix-induced blockers in 2 consecutive rounds; N items left, listed)`** — a terminal hand-back, **not a pass**. The loop is not iterating toward a pass; its fixes are producing the next round's findings. **It fires with or without a cap**, which is what closes the "delete the cap line to loop until pass" hole. *Two, not three*: a replay of a real six-round run showed a threshold of 3 fires exactly where the loop stopped by exhaustion anyway. And the asymmetry is not close — a false positive costs a hand-back the user overrides in one sentence; a false negative costs another N rounds of the loop certifying the defects it is inserting |

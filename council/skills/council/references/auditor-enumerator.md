@@ -6,7 +6,7 @@ Run this script before A0-A9 or a post-confirmation attestation. Supply the payl
 python3 - '<run nonce>' '<auditor dispatch k>' <<'EOF'
 import json,sys,re,hashlib,os,glob,xml.etree.ElementTree as ET
 NONCE,AUDIT_K=sys.argv[1:3]
-HEADER_RE=re.compile(r'^council: (?P<proposition>.+?) \| run: (?P<run>[0-9a-f]{8}) \| seat: (?P<seat>.+?) \| round: (?P<round>\d+) \| kind: (?P<kind>seat|re-dispatch|retry|cross-exam|DA|DA-final|tie-breaker|label|audit) \| dispatch: (?P<k>\d+)$')
+HEADER_RE=re.compile(r'^council: (?P<proposition>.+?) \| run: (?P<run>[0-9a-f]{8}) \| seat: (?P<seat>.+?) \| round: (?P<round>\d+) \| kind: (?P<kind>seat|re-dispatch|retry|cross-exam|DA|DA-final|tie-breaker|label|compare|audit) \| dispatch: (?P<k>\d+)$')
 def blocks(r):
     if not isinstance(r,dict) or not isinstance(r.get("message"),dict): return []
     c=r["message"].get("content")

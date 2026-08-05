@@ -1,7 +1,7 @@
 {
   "name": "council",
-  "version": "2026.7.15",
-  "description": "Multi-perspective council for one open decision: agency-agents specialists give independent round-one positions and argue explicit cruxes. Capable hosts may reach CONVERGED after audit and human confirmation; weaker hosts with fresh seats return ADVISORY, which is unaudited and non-authorizing. Requires the agency-agents catalog at ~/.agency-agents.",
+  "version": "2026.8.0",
+  "description": "Multi-perspective council for one open decision, including architecture selection when a draft exists and the goal is to choose rather than edit. Incumbent-draft mode adopts a neutral brief, runs blind challenger search, then reveals and compares the draft. Capable hosts may reach CONVERGED; weaker hosts return unaudited, non-authorizing ADVISORY. Use review-loop to fix artifacts to APPROVE. Requires ~/.agency-agents.",
   "author": {
     "name": "HerbertGao",
     "url": "https://github.com/HerbertGao"
@@ -20,8 +20,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Council",
-    "shortDescription": "Audited CONVERGED or non-authorizing ADVISORY council.",
-    "longDescription": "Seat one agency-agents specialist per named viewpoint gap, collect independent round-one positions, number disagreements into cruxes, and argue them through DA and cross-examination. Canonical host records enable audited CONVERGED after human confirmation. Without those records, fresh seats still produce ADVISORY; it is unaudited and non-authorizing.",
+    "shortDescription": "Draft-aware CONVERGED or non-authorizing ADVISORY council.",
+    "longDescription": "Seat one agency-agents specialist per named viewpoint gap and debate one open decision. For an existing architecture draft, first adopt a neutral brief and run incumbent-blind challenger search, then reveal and compare the draft without editing it. Canonical records enable audited CONVERGED; weaker hosts produce unaudited, non-authorizing ADVISORY.",
     "developerName": "HerbertGao",
     "category": "Productivity",
     "capabilities": [

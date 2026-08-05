@@ -8,6 +8,10 @@ checkable instead of relying on a prose reviewer to notice drift.
 Run: scripts/check-format.py            exit 1 on any failure
      scripts/check-format.py --self-test   prove the checks can actually fail
 """
+# Legacy layout is intentional; keep automated formatters from expanding this file.
+# fmt: off
+
+import copy
 import glob
 import json
 import os
@@ -38,7 +42,7 @@ LOCAL_PATH_RE = re.compile(r"\[local: ([A-Za-z0-9._/-]+\.md)\]")
 # The ladder's own backtick paths — the table the agent actually reads to resolve a lane.
 SPEC_PATH_RE = re.compile(r"`([a-z0-9-]+/[a-z0-9./-]+\.md)`")
 COUNCIL_DISPATCH_KINDS = ("seat", "re-dispatch", "retry", "cross-exam", "DA",
-                          "DA-final", "tie-breaker", "label", "audit")
+                          "DA-final", "tie-breaker", "label", "compare", "audit")
 COUNCIL_AUDITOR_REF = "council/skills/council/references/auditor-enumerator.md"
 COUNCIL_AUDITOR_FIXTURE = "evals/council/fixtures/claude-auditor/session.jsonl"
 COUNCIL_CLAUDE_SKILL = "council/skills/council/SKILL.md"
@@ -54,12 +58,55 @@ def _unique_json_object(pairs):
 
 
 def loads_json_unique(body: str):
-    return json.loads(body, object_pairs_hook=_unique_json_object)
+    try:
+        return json.loads(body, object_pairs_hook=_unique_json_object)
+    except json.JSONDecodeError:
+        raise
 
 
 def load_json_unique(path: str):
-    with open(path, encoding="utf-8") as fh:
-        return json.load(fh, object_pairs_hook=_unique_json_object)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh, object_pairs_hook=_unique_json_object)
+    except (OSError, json.JSONDecodeError):
+        raise
+
+
+def _read_utf8(path: str) -> str:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
+    except OSError as err:
+        raise RuntimeError(f"cannot read fixture {path}: {err}") from err
+
+
+def _write_utf8(path: str, content: str, mode: str = "w") -> None:
+    try:
+        with open(path, mode, encoding="utf-8") as fh:
+            fh.write(content)
+    except OSError as err:
+        raise RuntimeError(f"cannot write fixture {path}: {err}") from err
+
+
+def _copytree(source: str, target: str) -> None:
+    try:
+        shutil.copytree(source, target)
+    except OSError as err:
+        raise RuntimeError(f"cannot copy fixture tree {source}: {err}") from err
+
+
+def _remove(path: str) -> None:
+    try:
+        os.unlink(path)
+    except OSError as err:
+        raise RuntimeError(f"cannot remove fixture {path}: {err}") from err
+
+
+def _mkdir(path: str) -> None:
+    try:
+        os.makedirs(path)
+    except OSError as err:
+        raise RuntimeError(f"cannot create fixture directory {path}: {err}") from err
 
 
 def _select_required_scope(body: str, selector: str):
@@ -68,7 +115,7 @@ def _select_required_scope(body: str, selector: str):
         return body, None
     if selector.startswith("before-section-prefix:"):
         prefix = re.escape(selector.removeprefix("before-section-prefix:"))
-        headings = list(re.finditer(rf"^##\s+{prefix}[^\n]*$", body, re.M))
+        headings = list(re.finditer(rf"^##\s+{prefix}[^\n]*$", body, re.MULTILINE))
         if len(headings) != 1:
             return None, f"scope {selector!r} resolved {len(headings)} times, expected exactly one"
         return body[:headings[0].start()], None
@@ -76,15 +123,15 @@ def _select_required_scope(body: str, selector: str):
     if fenced or selector.startswith("section-prefix:"):
         marker = "fences-in-section-prefix:" if fenced else "section-prefix:"
         prefix = re.escape(selector.removeprefix(marker))
-        headings = list(re.finditer(rf"^##\s+{prefix}[^\n]*$", body, re.M))
+        headings = list(re.finditer(rf"^##\s+{prefix}[^\n]*$", body, re.MULTILINE))
         if len(headings) != 1:
             return None, f"scope {selector!r} resolved {len(headings)} times, expected exactly one"
         start = headings[0].end()
-        following = re.search(r"^##\s+", body[start:], re.M)
+        following = re.search(r"^##\s+", body[start:], re.MULTILINE)
         section = body[start:start + following.start()] if following else body[start:]
         if not fenced:
             return section, None
-        blocks = re.findall(r"```[A-Za-z0-9]*\n(.*?)```", section, re.S)
+        blocks = re.findall(r"```[A-Za-z0-9]*\n(.*?)```", section, re.DOTALL)
         if not blocks:
             return None, f"scope {selector!r} contains no fenced block"
         return "\n".join(blocks), None
@@ -157,6 +204,9 @@ def check(contract: dict, files: dict, tracked) -> list:
                 else:
                     fail(f"[{name}] {rel}: malformed required_verbatim entry {requirement!r}")
                     continue
+                if selected is None:
+                    fail(f"[{name}] {rel}: selector returned no text")
+                    continue
                 observed = selected.count(literal)
                 if (expected is None and observed == 0) or (expected is not None and observed != expected):
                     scope = "" if isinstance(requirement, str) else f" in {requirement['selector']!r}"
@@ -192,7 +242,7 @@ def check(contract: dict, files: dict, tracked) -> list:
 
             # A rule can be word-perfect in the prose and absent from the block the agent
             # actually copies — and then nobody ever emits it. Check the template itself.
-            blocks = re.findall(r"```[A-Za-z0-9]*\n(.*?)```", body, re.S)
+            blocks = re.findall(r"```[A-Za-z0-9]*\n(.*?)```", body, re.DOTALL)
             for want in spec["fenced_must_contain"]:
                 if not any(want in b for b in blocks):
                     fail(f"[{name}] {rel}: {want!r} appears nowhere inside a fenced block — "
@@ -221,23 +271,77 @@ def check(contract: dict, files: dict, tracked) -> list:
     return fails
 
 
-def check_twins(files: dict) -> list:
-    """Every universal skill ships a byte-identical Codex copy.
+def _frontmatter_description(body: str) -> tuple[str | None, str | None]:
+    """Return the parsed description string without importing a YAML runtime."""
+    match = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", body, re.DOTALL)
+    if match is None:
+        return None, "missing YAML frontmatter"
+    lines = match.group(1).splitlines()
+    hits = [i for i, line in enumerate(lines) if re.match(r"^description\s*:", line)]
+    if len(hits) != 1:
+        return None, f"description resolved {len(hits)} times, expected exactly one"
+    index = hits[0]
+    raw = lines[index].split(":", 1)[1].strip()
+    if raw in (">", ">-", "|", "|-"):
+        block = []
+        for line in lines[index + 1:]:
+            if line and not line[0].isspace():
+                break
+            if line.strip():
+                block.append(line.strip())
+        value = " ".join(block) if raw.startswith(">") else "\n".join(block)
+        return value, None
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in ("'", '"'):
+        return raw[1:-1], None
+    return raw, None
 
-    In bash this was a `for t in codex-plugins/*/skills/$n/SKILL.md` loop guarded by
-    `[ -f "$t" ]` — an unmatched glob made the body never run, so a *missing* twin
-    passed green. Fail closed: a twin that is absent is a twin that drifted.
-    """
+
+def check_description_lengths(files: dict, limit: int = 1024) -> list:
+    """Reject undiscoverable skills before a host reports a runtime conflict."""
     fails = []
-    for src in sorted(f for f in files if re.fullmatch(r"skills/[^/]+/SKILL\.md", f)):
-        name = src.split("/")[1]
-        twins = [f for f in files if re.fullmatch(rf"codex-plugins/[^/]+/skills/{re.escape(name)}/SKILL\.md", f)]
-        if not twins:
-            fails.append(f"{src} has no Codex twin under codex-plugins/*/skills/{name}/")
-        for t in twins:
-            if files[t] != files[src]:
-                fails.append(f"twin drift: {t} is not a byte-copy of {src}")
+    for rel, body in sorted(files.items()):
+        if not rel.endswith("/SKILL.md"):
+            continue
+        description, err = _frontmatter_description(body)
+        if err:
+            fails.append(f"{rel}: {err}")
+        elif description is None:
+            fails.append(f"{rel}: description parser returned no value")
+        elif len(description) > limit:
+            fails.append(f"{rel}: description exceeds {limit} characters ({len(description)})")
     return fails
+
+
+def check_twins(files: dict) -> list:
+    """Every universal skill file ships a byte-identical Codex copy."""
+    fails = []
+    sources = sorted(f for f in files
+                     if re.fullmatch(r"skills/[^/]+/(?:SKILL\.md|references/.+)", f))
+    for src in sources:
+        _, name, tail = src.split("/", 2)
+        pattern = rf"codex-plugins/[^/]+/skills/{re.escape(name)}/{re.escape(tail)}"
+        twins = [f for f in files if re.fullmatch(pattern, f)]
+        if not twins:
+            fails.append(f"{src} has no Codex twin under codex-plugins/*/skills/{name}/{tail}")
+        for twin in twins:
+            if files[twin] != files[src]:
+                fails.append(f"twin drift: {twin} is not a byte-copy of {src}")
+    return fails
+
+
+def check_council_reference_copies(files: dict) -> list:
+    """The host-neutral incumbent protocol must not drift across distributions."""
+    paths = (
+        "skills/council/references/incumbent-draft-mode.md",
+        "council/skills/council/references/incumbent-draft-mode.md",
+        "codex-plugins/council/skills/council/references/incumbent-draft-mode.md",
+    )
+    missing = [path for path in paths if path not in files]
+    if missing:
+        return [f"missing incumbent-draft protocol copy: {path}" for path in missing]
+    source = files[paths[0]]
+    return [f"incumbent-draft protocol drift: {path}" for path in paths[1:]
+            if files[path] != source]
 
 
 HOST_KEY = "subagent_type"   # the host's dispatch key: the one thing the neutral file never names
@@ -282,7 +386,7 @@ def check_council_header_parser(files: dict) -> list:
     body = files.get(rel)
     if body is None:
         return [f"{rel}: required auditor reference is missing"]
-    found = re.search(r"^HEADER_RE=re\.compile\(r'(.+)'\)$", body, re.M)
+    found = re.search(r"^HEADER_RE=re\.compile\(r'(.+)'\)$", body, re.MULTILINE)
     if found is None:
         return [f"{rel}: auditor reference has no extractable HEADER_RE"]
     try:
@@ -308,16 +412,18 @@ def check_council_header_parser(files: dict) -> list:
             return [f"{rel}: HEADER_RE rejects or mis-parses kind {kind!r}"]
     no_kind = ("council: choose a database | run: deadbeef | seat: /tmp/expert.md | round: 1 "
                "| dispatch: 1")
-    if pattern.fullmatch(no_kind) or pattern.fullmatch(valid.replace("kind: audit", "kind: fork")):
+    unknown_kind = ("council: choose a database | run: deadbeef | seat: /tmp/expert.md | round: 1 "
+                    "| kind: fork | dispatch: 1")
+    if pattern.fullmatch(no_kind) or pattern.fullmatch(unknown_kind):
         return [f"{rel}: HEADER_RE accepts a header with no kind"]
     return []
 
 
-def _run_council_auditor_fixture(body: str, fixture: str):
+def _run_council_auditor_fixture(body: str | None, fixture: str) -> tuple[subprocess.CompletedProcess[str] | None, str | None]:
     """Extract and run the shipped enumerator against one synthetic main log."""
     if body is None or not os.path.isfile(fixture):
         return None, "Claude auditor fixture or enumerator is missing"
-    found = re.search(r"```bash\npython3 .*? <<'EOF'\n(.*?)\nEOF\n```", body, re.S)
+    found = re.search(r"```bash\npython3 .*? <<'EOF'\n(.*?)\nEOF\n```", body, re.DOTALL)
     if found is None:
         return None, f"{COUNCIL_AUDITOR_REF}: fenced enumerator script is not extractable"
     code = found.group(1)
@@ -335,8 +441,8 @@ def check_council_auditor_inflight(files: dict) -> list:
     body = files.get(COUNCIL_AUDITOR_REF)
     fixture = os.path.join(ROOT, COUNCIL_AUDITOR_FIXTURE)
     run, err = _run_council_auditor_fixture(body, fixture)
-    if err:
-        return [err]
+    if err or run is None:
+        return [err or "Claude auditor fixture returned no process result"]
     if run.returncode != 0:
         return [f"Claude auditor in-flight fixture failed: {run.stderr.strip() or run.stdout.strip()}"]
     expected = (
@@ -367,39 +473,41 @@ def check_council_auditor_sidecar_negatives(files: dict) -> list:
         return ["Claude auditor sidecar-negative fixture or enumerator is missing"]
     with tempfile.TemporaryDirectory(prefix="council-auditor-") as tmp:
         missing = os.path.join(tmp, "missing")
-        shutil.copytree(fixture_root, missing)
-        os.unlink(os.path.join(missing, "worker", "subagents", "agent-seat1.jsonl"))
+        _copytree(fixture_root, missing)
+        _remove(os.path.join(missing, "worker", "subagents", "agent-seat1.jsonl"))
         run, err = _run_council_auditor_fixture(body, os.path.join(missing, "session.jsonl"))
-        if err or run.returncode != 0 or "UNVERIFIABLE\tseat-k1\tno-sidecar\tseat1" not in run.stdout:
+        if err or run is None or run.returncode != 0 or \
+                "UNVERIFIABLE\tseat-k1\tno-sidecar\tseat1" not in run.stdout:
             return [err or "Claude auditor does not surface a missing completed-worker sidecar"]
 
         duplicate = os.path.join(tmp, "duplicate")
-        shutil.copytree(fixture_root, duplicate)
+        _copytree(fixture_root, duplicate)
         extra = os.path.join(duplicate, "second", "subagents")
-        os.makedirs(extra)
+        _mkdir(extra)
         shutil.copy2(os.path.join(duplicate, "worker", "subagents", "agent-seat1.jsonl"), extra)
         run, err = _run_council_auditor_fixture(body, os.path.join(duplicate, "session.jsonl"))
-        if err or run.returncode != 0 or \
+        if err or run is None or run.returncode != 0 or \
                 "UNVERIFIABLE\tseat-k1\tduplicate-sidecars:2\tseat1" not in run.stdout:
             return [err or "Claude auditor does not surface duplicate completed-worker sidecars"]
 
         descendant = os.path.join(tmp, "descendant")
-        shutil.copytree(fixture_root, descendant)
+        _copytree(fixture_root, descendant)
         seat_sidecar = os.path.join(descendant, "worker", "subagents", "agent-seat1.jsonl")
-        with open(seat_sidecar, "a", encoding="utf-8") as fh:
-            fh.write('{"message":{"content":[{"type":"tool_use","name":"Agent","id":"child-use","input":{}}]}}\n')
+        _write_utf8(seat_sidecar,
+                    '{"message":{"content":[{"type":"tool_use","name":"Agent","id":"child-use","input":{}}]}}\n',
+                    mode="a")
         run, err = _run_council_auditor_fixture(body, os.path.join(descendant, "session.jsonl"))
-        if err or run.returncode != 0 or "UNVERIFIABLE\tseat-k1\tdescendant-dispatch:child-use" not in run.stdout:
+        if err or run is None or run.returncode != 0 or \
+                "UNVERIFIABLE\tseat-k1\tdescendant-dispatch:child-use" not in run.stdout:
             return [err or "Claude auditor hides a descendant dispatch from a seat sidecar"]
 
         malformed = os.path.join(tmp, "malformed-sidecar")
-        shutil.copytree(fixture_root, malformed)
+        _copytree(fixture_root, malformed)
         seat_sidecar = os.path.join(malformed, "worker", "subagents", "agent-seat1.jsonl")
-        with open(seat_sidecar, encoding="utf-8") as fh:
-            sidecar_body = fh.read()
-        with open(seat_sidecar, "w", encoding="utf-8") as fh:
-            fh.write('{"message":{"role":"assistant","content":{"type":"tool_use","name":"Write","id":"hidden-write","input":{}}}}\n')
-            fh.write(sidecar_body.split("\n", 1)[1])
+        sidecar_body = _read_utf8(seat_sidecar)
+        _write_utf8(seat_sidecar,
+                    '{"message":{"role":"assistant","content":{"type":"tool_use","name":"Write","id":"hidden-write","input":{}}}}\n'
+                    + sidecar_body.split("\n", 1)[1])
         run, err = _run_council_auditor_fixture(body, os.path.join(malformed, "session.jsonl"))
         observed = (run.stdout + run.stderr) if run else (err or "")
         if "malformed-schema:1" not in observed:
@@ -413,10 +521,11 @@ def check_council_auditor_record_negatives(files: dict) -> list:
     fixture_root = os.path.dirname(os.path.join(ROOT, COUNCIL_AUDITOR_FIXTURE))
     if body is None or not os.path.isdir(fixture_root):
         return ["Claude auditor record-negative fixture or enumerator is missing"]
-    with open(os.path.join(fixture_root, "session.jsonl"), encoding="utf-8") as fh:
-        original = fh.read()
+    original = _read_utf8(os.path.join(fixture_root, "session.jsonl"))
     lines = original.splitlines()
-    pick = lambda needle: next(line for line in lines if needle in line)
+
+    def pick(needle):
+        return next(line for line in lines if needle in line)
     duplicate = original.replace(
         original.splitlines()[3],
         original.splitlines()[3] + "\n" + original.splitlines()[3].replace("dispatch: 1", "dispatch: 4"), 1)
@@ -527,10 +636,9 @@ def check_council_auditor_record_negatives(files: dict) -> list:
     with tempfile.TemporaryDirectory(prefix="council-auditor-records-") as tmp:
         for label, content, expected in variants:
             root = os.path.join(tmp, label)
-            shutil.copytree(fixture_root, root)
+            _copytree(fixture_root, root)
             fixture = os.path.join(root, "session.jsonl")
-            with open(fixture, "w", encoding="utf-8") as fh:
-                fh.write(content)
+            _write_utf8(fixture, content)
             run, err = _run_council_auditor_fixture(body, fixture)
             observed = (run.stdout + run.stderr) if run else (err or "")
             if expected not in observed:
@@ -543,13 +651,15 @@ def _select_consumer(body: str, selector: str):
         return body, None
     if selector.startswith("section:"):
         title = re.escape(selector.removeprefix("section:"))
-        found = re.findall(rf"^##\s+{title}\s*$\n(.*?)(?=^##\s+|\Z)", body, re.M | re.S)
+        found = re.findall(rf"^##\s+{title}\s*$\n(.*?)(?=^##\s+|\Z)", body, re.MULTILINE | re.DOTALL)
         if len(found) != 1:
             return None, f"section selector {selector!r} resolved {len(found)} times, expected exactly one"
         return found[0], None
+    if selector == "line:description":
+        return _frontmatter_description(body)
     if selector.startswith("line:"):
         key = re.escape(selector.removeprefix("line:"))
-        found = re.findall(rf"^\s*{key}:\s*(?:\"([^\"]*)\"|'([^']*)'|(.+?))\s*$", body, re.M)
+        found = re.findall(rf"^\s*{key}:\s*(?:\"([^\"]*)\"|'([^']*)'|(.+?))\s*$", body, re.MULTILINE)
         if len(found) != 1:
             return None, f"line selector {selector!r} resolved {len(found)} times, expected exactly one"
         return next((value for value in found[0] if value != ""), ""), None
@@ -611,6 +721,9 @@ def check_consumer_surfaces(contract: dict, files: dict) -> list:
             if err:
                 fails.append(f"[{name}] {rel}: {err}")
                 continue
+            if selected is None:
+                fails.append(f"[{name}] {rel}: selector returned no value")
+                continue
             for literal in spec.get("required", []):
                 if literal not in selected:
                     fails.append(f"[{name}] {rel} {selector}: installation description omits {literal!r}")
@@ -623,7 +736,7 @@ def check_consumer_surfaces(contract: dict, files: dict) -> list:
                     r"\bproceed(?:s|ed|ing)?\s+with\s+(?:the\s+)?implementation\b|"
                     r"\bimplementation\s+(?:can|should|must)\s+proceed\b|"
                     r"implementation[^.;\n]*(approved|enabled)", clean)
-                certified = re.search(r"\badvisory\b.{0,80}\b(certif\w*|audited|audit\s+pass)\b", clean, re.S)
+                certified = re.search(r"\badvisory\b.{0,80}\b(certif\w*|audited|audit\s+pass)\b", clean, re.DOTALL)
                 if authority or certified:
                     fails.append(f"[{name}] {rel} {selector}: ADVISORY description contradicts its non-authorizing, unaudited boundary")
     return fails
@@ -660,8 +773,11 @@ def load_markdown() -> dict:
                 dirnames[:] = [d for d in dirnames if d != ".git"]
                 targets += [os.path.join(dirpath, f) for f in filenames if f.endswith(exts)]
         for t in targets:
-            with open(t, encoding="utf-8") as fh:
-                files[os.path.relpath(t, ROOT)] = fh.read()
+            try:
+                with open(t, encoding="utf-8") as fh:
+                    files[os.path.relpath(t, ROOT)] = fh.read()
+            except OSError as err:
+                raise RuntimeError(f"cannot read checked surface {t}: {err}") from err
     return files
 
 
@@ -723,7 +839,7 @@ def main() -> int:
                 continue
             try:
                 with open(os.path.join(CATALOG, p), encoding="utf-8") as fh:
-                    if re.search(r"^name:", fh.read(2000), re.M):
+                    if re.search(r"^name:", fh.read(2000), re.MULTILINE):
                         shallow.append(p)
             except OSError:
                 pass
@@ -744,7 +860,9 @@ def main() -> int:
     if not contract["forbidden_everywhere"].get("regex_patterns"):
         fails.append("forbidden_everywhere.regex_patterns is missing/empty — the collocation scan is disarmed")
     fails += check_families(contract, files)
+    fails += check_description_lengths(files)
     fails += check_twins(files)
+    fails += check_council_reference_copies(files)
     fails += check_claude_copies(files)
     fails += check_council_header_parser(files)
     fails += check_council_auditor_inflight(files)
@@ -785,7 +903,11 @@ def self_test() -> int:
     good = ("This round: local [embedded: gone → fix] not-run(tier unverified) CAPPED (known)\n"
             "```text\n[local: div/role.md]\n```")
     tracked = {"div/role.md"}
-    dup = lambda c, f: (lambda d: (f(d), d)[1])(json.loads(json.dumps(c)))
+
+    def dup(contract, mutate):
+        cloned = copy.deepcopy(contract)
+        mutate(cloned)
+        return cloned
 
     cases = [
         ("a clean spec passes", base, good, 0),
@@ -862,7 +984,7 @@ def self_test() -> int:
     header_cases = [
         ("council header parser matches its template", header, 0),
         ("council header parser omits kind field", header.replace(f" \\| kind: (?P<kind>{kinds})", ""), 1),
-        ("council header parser omits one kind", header.replace("|label|audit", "|audit"), 1),
+        ("council header parser omits one kind", header.replace("|label|compare|audit", "|label|audit"), 1),
         ("council header parser is missing", "no parser", 1),
     ]
     for label, body, expect in header_cases:
@@ -947,7 +1069,7 @@ def self_test() -> int:
         ok = False
     print(f"  {'✅' if got == 1 else '❌'} {'consumer surface contract is empty':<48} caught={bool(got)}  want=True")
 
-    duplicate_target = json.loads(json.dumps(surface_contract))
+    duplicate_target = copy.deepcopy(surface_contract)
     duplicate_target["consumer_surfaces"]["council"]["targets"].append(
         {"file": "manifest.json", "selector": "json:description"})
     got = 1 if check_consumer_surfaces(duplicate_target, {
@@ -957,7 +1079,7 @@ def self_test() -> int:
         ok = False
     print(f"  {'✅' if got == 1 else '❌'} {'duplicate consumer target is rejected':<48} caught={bool(got)}  want=True")
 
-    malformed_target = json.loads(json.dumps(surface_contract))
+    malformed_target = copy.deepcopy(surface_contract)
     malformed_target["consumer_surfaces"]["council"]["targets"] = ["manifest.json"]
     got = 1 if check_consumer_surfaces(malformed_target, {"manifest.json": "{}"}) else 0
     if got != 1:

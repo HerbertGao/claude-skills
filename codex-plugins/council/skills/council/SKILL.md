@@ -1,11 +1,21 @@
 ---
 name: council
-description: Use for open decisions with NOTHING WRITTEN yet — technology selection, architecture, whether to build something. Pulls real specialists from the agency-agents catalog (one seat per named viewpoint gap, 4 or more), gets independent round-one positions on ONE decision, numbers the disagreements into cruxes, and makes the seats argue them out. The expert debate is the core protocol. Hosts with canonical dispatch, return and tool records add an audited assurance tier and may emit CONVERGED after audit, human confirmation and a confirmation attestation; hosts with fresh-context seats but weaker provenance still run the full debate and emit a non-certifying, non-authorizing ADVISORY with every missing guarantee disclosed. Triggers - convene a council, multi-expert debate, get several perspectives on this decision, have some experts argue this out, 开个评议会, 让几个专家吵一下, 多视角讨论这个方案, 找专家评议, 这个选型该怎么定. Something already written — a proposal, a spec, a diff — that needs tearing apart is review-loop, not council.
+description: >-
+  Use for one open decision, including architecture selection when an incumbent
+  draft already exists and the goal is to choose rather than edit. Seats 4+
+  catalog specialists, gets independent positions, exposes cruxes, and makes
+  them debate. In incumbent-draft mode it first adopts a neutral brief, runs an
+  incumbent-blind challenger search, then freezes, reveals, and compares the
+  draft under shared criteria; records keep, replace, combine, or unresolved
+  without editing. Canonical host records may reach CONVERGED after audit and
+  human confirmation; weaker hosts return unaudited, non-authorizing ADVISORY.
+  If a written artifact needs finding/fixing to APPROVE, use review-loop; if
+  both are needed, run council first.
 ---
 
 # council
 
-One decision with nothing written yet → one real specialist per named gap (4+) gives an independent round-one position → extract the disagreement → argue → produce an audited decision or a clearly qualified advisory. **Anything already written (a proposal, a spec, a diff) that needs tearing apart → `review-loop`.**
+One open decision → one real specialist per named gap (4+) gives an independent position → extract the disagreement → argue → produce an audited decision or a clearly qualified advisory. An architecture draft whose terminal goal is **keep / replace / combine / unresolved** uses council's incumbent-draft mode; a written artifact whose goal is finding and fixing defects to `APPROVE` uses `review-loop`. If both are requested, council decides first and review-loop revises second.
 
 ## Terms
 
@@ -19,7 +29,8 @@ One decision with nothing written yet → one real specialist per named gap (4+)
 - **session log** — audited mode's platform-written file: your prose, your tool calls with their arguments and outputs, and every dispatch with its prompt, worker type, model and return.
 - **workdir** — a fresh directory holding the run's deliverables (`candidate-<n>.md`). Audited mode keeps no evidence copy there; advisory mode may store its explicitly unaudited transcript bundle there.
 - **seat** — one specialist subagent occupying one axis for the whole run, identified by **its catalog path** (the frontmatter `name:` is a display name — `Database Optimizer`, not the slug — and is used only to deduplicate). **axis** — one conflicting-interest dimension (§1). **tie-breaker** — a seat added mid-run on a new axis (§4).
-- **truth sources** — the repo paths / docs handed to every seat in round 1, echoed in §0.
+- **truth sources** — the repo paths / docs handed to every seat in round 1, echoed in §0. In incumbent-draft mode these are candidate-independent sources from an adopted neutral brief, never the draft.
+- **decision mode** — `greenfield`, or `incumbent-draft` when a draft exists but the requested terminal is a choice rather than an edit. The latter loads the bundled reference at references/incumbent-draft-mode.md before seating.
 - **token** — `CONVERGED` (audited mode only; needs audit PASS, human confirmation and attestation PASS), `ADVISORY (…)` (debate completed without the audited provenance guarantee), or `UNRESOLVED (…)` / `STOPPED (…)` (reports; they do not need consent to be true).
 - **candidate record** — the §8 record built before emission, `**Status**: <token withheld>`.
 - **refutable** — a sentence a reader could name evidence *against*. "Use Postgres" is not; "Postgres over SQLite, because write QPS will exceed 2k" is.
@@ -72,7 +83,7 @@ So `CONVERGED` means **no fabrication was caught** — not "the conclusion is ri
 
 ## 0. Self-driving, and what every STOPPED costs
 
-**council never hands control back except at §5's human touchpoints.** An audit FAIL on a quality check means fix and re-audit; an audit FAIL on **A0 / A0b / A5** is evidence of fabrication, not a defect to fix, and takes §5's fabrication row directly.
+**council never hands control back except at §5's human touchpoints and incumbent-draft brief adoption.** An audit FAIL on a quality check means fix and re-audit; an audit FAIL on **A0 / A0b / A5** or incumbent check **I0 / I1** is evidence of fabrication, not a defect to fix, and takes §5's fabrication row directly.
 
 **Open the run.** Create `workdir` (fresh; not `/`, not `$HOME`, not an ancestor of the project root — A9 rejects those), then:
 
@@ -83,6 +94,7 @@ git -C ~/.agency-agents rev-parse HEAD               # the catalog rev A2 will r
 
 ```text
 run: <nonce> | workdir: <path> | catalog: <rev> | mode: <audited|advisory>
+decision mode: <greenfield|incumbent-draft>
 proposition: <one refutable sentence>
 truth sources: <the paths/docs every seat gets in round 1>
 assurance gaps: <none | comma-separated canonical ids — see Platform Adapter>
@@ -96,7 +108,7 @@ The proposition goes **verbatim** to every seat; the dispatch prompt carries no 
 **Every `STOPPED` owes evidence** — otherwise quitting before you start is the only free door. In audited mode, a `STOPPED` emitted after any dispatch also owes A0 (a full run relabelled as an early exit is the cheapest cheat): dispatch the auditor with the nonce + the A0 block only. An A0 FAIL there ⇒ `UNRESOLVED (audit-failed: fabrication)` instead. Advisory mode cannot run A0; its STOPPED report instead pastes the dispatch ids and returns it actually received and labels that account `moderator-visible, unaudited`.
 
 | STOPPED reason | trigger | evidence owed |
-|---|---|---|
+| --- | --- | --- |
 | proposition needs splitting | above | the ≥2 decisions it splits into, one refutable sentence each, **plus the axes — at least §1's three — of the one you recommend convening first** (prepay §1's work; cannot list two decisions ⇒ it is not several decisions — convene) |
 | not a council question | fewer than 3 or more than 8 non-opposing axes (§1) | the axes you derived, with named gaps, and which interest lacks a representative |
 | seats exhausted | fewer than 2 compliant seats in a round (§2) | the failed seats' dispatch ids |
@@ -109,6 +121,8 @@ The proposition goes **verbatim** to every seat; the dispatch prompt carries no 
 | awaiting human | a §5 question or presentation got no answer | the question or candidate as presented. **A suspension, not an exit** — the platform holds the run, so a resumed session picks up from it, and **no timeout converts silence into consent** |
 
 ## 1. Seat the council
+
+For `incumbent-draft`, **Read references/incumbent-draft-mode.md completely before deriving axes or dispatching anyone**; its adopted-neutral-brief, blind-search, freeze/reveal, compare, audit-delta, and no-edit rules are mandatory. Greenfield runs do not load it.
 
 **Axes first, people second.** If this decision is wrong, who gets hurt? Cover ① the primary domain, ② the interest naturally in tension with it, ③ the downstream actually touched (security / cost / maintainability / users / compliance). One named gap per axis.
 
@@ -151,7 +165,7 @@ opposing: <seat letter>
 **Every dispatch prompt begins with the header, and the persona is fenced:**
 
 ```text
-council: <proposition> | run: <nonce> | seat: <path | —> | round: <n> | kind: <seat|re-dispatch|retry|cross-exam|DA|DA-final|tie-breaker|label|audit> | dispatch: <k>
+council: <proposition> | run: <nonce> | seat: <path | —> | round: <n> | kind: <seat|re-dispatch|retry|cross-exam|DA|DA-final|tie-breaker|label|compare|audit> | dispatch: <k>
 <persona>
 …the catalog file's body, verbatim, minus frontmatter. Nothing else inside these markers.…
 </persona>
@@ -185,6 +199,8 @@ What would change my mind: <mandatory. Either ① something the moderator can ve
 **Seat floors.** Fewer than 3 compliant *non-opposing* seats in round 1 ⇒ the consensus set is empty (the DA falls to its other targets) and §7 reads `seats-degraded`: two samples of one base model agreeing is the weakest form of already-weak evidence and may not be written up as "the council agreed". Fewer than 2 compliant seats in any round ⇒ `STOPPED (seats exhausted)`.
 
 ## 3. Aggregate
+
+In incumbent-draft mode, the reference's post-reveal compare returns are the decision-base returns for every bin and later debate round; blind-search returns prove candidate independence but are not votes about an unseen incumbent.
 
 Every reason lands in **exactly one of three bins**, and the three are exhaustive: contradicted ⇒ crux; asserted by all ⇒ consensus; otherwise ⇒ unopposed.
 
@@ -246,12 +262,12 @@ On C<n>: <rebut | concede | partially concede>
 - **`V > 3` ⇒ after the third question, ask one meta-question**: *"`N` value cruxes remain: `<list, each with its cost-of-wrong>`. ① Ask them, one at a time. ② I abstain on the rest. ③ Stop here."* ① continues to `asked == V`; ② closes them `delegated`; ③ closes them `unasked`. **A7 counts `unasked` as open**, so a run that stops there ends `UNRESOLVED (unasked: N open)`. The cap of 3 binds *you*, not the human — capping what the human may spend on their own decision would make `CONVERGED` unreachable for the very councils this protocol convenes.
 - Never ask the human a fact. A choice ⇒ `human-settled`; "I abstain" ⇒ `delegated`; no answer ⇒ `STOPPED (awaiting human)`.
 
-**② The terminal.** Build and freeze the **candidate record** (§8) at `workdir/candidate-<n>.md` — a new file per candidate, because overwriting a rejected or audit-failed candidate erases the finding. `**Status**: <token withheld>`; no line-initial terminal verdict anywhere in it. The candidate declares its assurance mode before any verdict path runs and is never changed after its audit dispatch. Reserve the line prefixes `candidate-digest:`, `audit-dispatch:`, `canonical-audit-return:`, `presentation-record:`, `confirmation-record:`, `attestation-return:`, `PASS` and `FAIL:` for the post-candidate evidence envelope; any such line in candidate bytes is A9 failure.
+**② The terminal.** In incumbent-draft mode, first apply the reference's decision-record and unchanged-draft requirements; its disposition is a record field, never a new terminal token. Build and freeze the **candidate record** (§8) at `workdir/candidate-<n>.md` — a new file per candidate, because overwriting a rejected or audit-failed candidate erases the finding. `**Status**: <token withheld>`; no line-initial terminal verdict anywhere in it. The candidate declares its assurance mode before any verdict path runs and is never changed after its audit dispatch. Reserve the line prefixes `candidate-digest:`, `audit-dispatch:`, `canonical-audit-return:`, `presentation-record:`, `confirmation-record:`, `attestation-return:`, `PASS` and `FAIL:` for the post-candidate evidence envelope; any such line in candidate bytes is A9 failure.
 
 **Advisory path.** Do not run §6 or fabricate an audit substitute. Paste the `Round-1 manifest:`, every moderator-visible raw return, the crux ledger, DA outcome, human inputs, minority report and the complete `Assurance gaps:` list. Then:
 
 | advisory state | token |
-|---|---|
+| --- | --- |
 | no open cruxes | **`ADVISORY (debate-converged; unaudited)`** |
 | open cruxes remain | **`ADVISORY (N open; unaudited)`**, listing every open crux and what would resolve it |
 
@@ -262,10 +278,10 @@ On C<n>: <rebut | concede | partially concede>
 Take the **first matching row**:
 
 | state | action |
-|---|---|
+| --- | --- |
 | A0 reports `blind: no` — a seat ran on a worker type that inherits context or can dispatch | emit `UNRESOLVED (not-blind: N open)` directly |
 | no session log obtainable, the log lacks the dispatch that produced the auditor, or a canonical dispatch/prompt/return/resolved-model/per-worker-tool-log record that should exist disappears after one settle/re-read | emit `UNRESOLVED (dispatch-unverifiable: N open)` directly (N may be 0); this is an integrity failure, never a retroactive advisory downgrade |
-| verdict FAIL on **A0 / A0b / A5** — a dispatch that never happened, one that happened and was hidden, a leaked prompt, fabricated concession evidence | **no re-audit.** These are evidence of fabrication, not quality defects; a retry budget that erases them erases the only checks that can see the protocol's core failure. Emit `UNRESOLVED (audit-failed: fabrication)` directly; §7 lists the failing checks |
+| verdict FAIL on **A0 / A0b / A5** or incumbent **I0 / I1** — a dispatch that never happened, one that happened and was hidden, a leaked prompt, fabricated brief adoption, or fabricated concession evidence | **no re-audit.** These are evidence of fabrication, not quality defects; a retry budget that erases them erases the only checks that can see the protocol's core failure. Emit `UNRESOLVED (audit-failed: fabrication)` directly; §7 lists the failing checks |
 | verdict FAIL on any other check, fixable, re-audit budget unspent | fix external run state without changing candidate bytes and re-audit; if candidate bytes must change, build and freeze `candidate-<n+1>.md` with a fresh audit budget; then re-enter this table |
 | verdict FAIL, and (unfixable ∨ out of §4 rounds ∨ re-audit budget spent) | emit `UNRESOLVED (audit-failed: N open)` directly |
 | no auditor return, or its last line is neither `PASS` nor `FAIL:` — after one `kind: retry` | emit `UNRESOLVED (unaudited: N open)` directly |
@@ -275,7 +291,7 @@ Take the **first matching row**:
 **The post-candidate evidence envelope** is outside the hashed candidate and uses the reserved labels `audit-dispatch:`, `canonical-audit-return:`, `presentation-record:`, `confirmation-record:` and `attestation-return:` for the auditor dispatch, canonical return/digest projection, exact presentation, human response and attestation return. Present the frozen candidate plus the command that prints this evidence **from the platform's own record** — consent must bind bytes and evidence you did not write. Three outcomes:
 
 | the human… | action |
-|---|---|
+| --- | --- |
 | confirms | run the post-confirmation attestation below; only its `PASS` may emit `CONVERGED`, with every applicable qualifier: `(single-model)` when §7 reads `correlated yes`; `(delegated D/V)` when `D > 0` — a run where the human abstained on every value call is a rubber stamp, and the token is where a reader looks |
 | rejects | the candidate is void; convert the rejection into a constraint or a value ruling (**both recorded in §8's `## Human inputs`**), reopen the affected cruxes, back to §4. **With no §4 rounds left, or on a third rejection** ⇒ `UNRESOLVED (rejected: N open)` — re-presenting an unchanged candidate is how a human is trained to rubber-stamp |
 | does not respond | `STOPPED (awaiting human)` |
@@ -290,7 +306,7 @@ Advisory mode skips this section and records auditor `not run (advisory)`.
 
 Dispatch a **fresh-context** worker with a shell, taking the next `k`.
 
-**Payload:** candidate audit = `run nonce · workdir · candidate: <n> · the §1 seat echo · catalog rev · audit-procedure path+version/commit+SHA-256 · adapter path+version/commit+SHA-256`; attestation = §5's smaller payload with the exact same pins. **Nothing else.** First hash-verify each pinned file against the payload's own `sha256:` — a digest match needs no log — then reconcile those pins against the §0 echo before trusting either file; a mismatch is A0 fabrication and emits `UNRESOLVED (audit-failed: fabrication)`, never a retroactive advisory downgrade. `candidate: <n>` is mandatory because a rejection rebuilds it. The auditor derives the catalog listing from the pinned rev rather than receiving the moderator's copy.
+**Payload:** candidate audit = `run nonce · workdir · candidate: <n> · the §1 seat echo · catalog rev · audit-procedure path+version/commit+SHA-256 · adapter path+version/commit+SHA-256`; incumbent-draft mode also carries the reference's pinned `incumbent-procedure`. Attestation = §5's smaller payload with the exact same pins. **Nothing else.** First hash-verify each pinned file against the payload's own `sha256:` — a digest match needs no log — then reconcile those pins against the §0 echo before trusting either file; a mismatch is A0 fabrication and emits `UNRESOLVED (audit-failed: fabrication)`, never a retroactive advisory downgrade. `candidate: <n>` is mandatory because a rejection rebuilds it. The auditor derives the catalog listing from the pinned rev rather than receiving the moderator's copy.
 
 For `post-confirmation-attestation`, discover the same platform window and run only §5's identity, confirmation, dispatch and actual-write interval gates; do not re-run the earlier A0-A9 window. End with `PASS` or `FAIL: confirmation-unverifiable`.
 
@@ -302,6 +318,8 @@ For `post-confirmation-attestation`, discover the same platform window and run o
 **Do not "walk every log that mentions the nonce".** A replay produces exactly the signature that accommodation was written for: the moderator re-declares an old run's nonce, the birth event is found in the old file, your dispatch record in the new one, both bounds "satisfied" — and an entire previous council is inside the window, inherited wholesale by a moderator who dispatched nothing but you. Birth not in the file that dispatched you ⇒ `FAIL: replay`.
 
 **Enumerate first, never read the log whole.** Run the Platform Adapter's enumeration command: one row per dispatch record in the window — `k`, dispatch id, state, functional kind, worker type, resolved model, full SHA-256 prompt digest, **and the worker's own record locator** — **parsed out of the record, not truncated out of it**. Every check below reads that table plus targeted lookups. **Read a return by projection** (`grep -nE '\[(fact|prediction|value):|What would change my mind|concede|label:|consulted:|Position:'`) — about ten lines each; materialize a whole return only to resolve a specific mismatch.
+
+In incumbent-draft mode, run every audit addition in references/incumbent-draft-mode.md; its I0/I1 leakage or adoption failure follows the non-retryable fabrication path.
 
 **Normalize entities before you diff anything.** The moderator only ever saw the platform's *escaped* copy of a return (`&lt;` where the worker wrote `<`); the copy you read is raw. The return contract *mandates* angle brackets — `[fact: <file:line>]`, `[prediction: threshold=<comparator+value+unit>]` — so an honest transcription mismatches on sight. **`html.unescape()` both sides before comparing** (A3, A5). A byte-diff without this FAILs the honest run and passes nothing.
 
@@ -422,6 +440,8 @@ Quality: run <nonce> | mode <audited|advisory> | dispatches <n> (retries r) | ca
   | opposing <path> | rounds R | concessions C | out-of-band <id: reason,… | none>
   | DA <attacked P, broke B | no-op> | DA-final <pass1: attacked P, broke B[; pass2: …] | n/a>
   | value cruxes V (asked A, delegated D, unasked U)
+  | decision-mode <greenfield|incumbent-draft> | incumbent <n/a|keep|replace|combine|unresolved>
+  | challengers <qualified/considered|n/a> | freeze <yes|n/a> | reveal <after-freeze|n/a>
   | auditor <pending | PASS | FAIL(ids) | not run (advisory) | cannot re-run | dispatch-unverifiable>
 ```
 
@@ -430,6 +450,8 @@ Quality: run <nonce> | mode <audited|advisory> | dispatches <n> (retries r) | ca
 ```markdown
 **Status**: <token withheld>
 Run: <nonce> · Workdir: <path> · Candidate: <n>
+Decision mode: <greenfield|incumbent-draft>
+Incumbent decision: <n/a|keep|replace|combine|unresolved>
 
 ## Decision
 <one line + the reasoning>

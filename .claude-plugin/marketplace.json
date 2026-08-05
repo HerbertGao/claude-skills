@@ -6,18 +6,18 @@
   },
   "metadata": {
     "description": "HerbertGao's self-hosted AI coding skills marketplace.",
-    "version": "2026.7.15"
+    "version": "2026.8.0"
   },
   "plugins": [
     {
       "name": "review-loop",
       "source": "./review-loop",
-      "description": "Adversarial review loop for Claude Code — runs Codex rescue + Code Reviewer + Reality Checker in parallel over your proposal and diff, merges/triages findings, dispatches minimal fixes, and re-reviews until pass or cap. Standing counter-pressures keep its own output honest: a simplicity lens against the bloat an insert-only loop accrues, and a cold-read legibility lens so an iterated review cannot turn a spec into a patch pile only the loop can read. Works on anything already written — an OpenSpec change, a proposal, a spec, a diff, including pure prose; a decision with nothing written yet is council. Requires the agency-agents catalog at ~/.agency-agents (install per the README); a role it cannot resolve there halts the run rather than standing in a fabricated expert."
+      "description": "Adversarial review loop for Claude Code — runs Codex rescue + Code Reviewer + Reality Checker in parallel over your proposal and diff, merges/triages findings, dispatches minimal fixes, and re-reviews until pass or cap. Standing counter-pressures keep its own output honest: a simplicity lens against the bloat an insert-only loop accrues, and a cold-read legibility lens so an iterated review cannot turn a spec into a patch pile only the loop can read. Works on written artifacts that need finding and fixing to pass; architecture selection belongs to council even when a draft already exists. Requires the agency-agents catalog at ~/.agency-agents (install per the README); a role it cannot resolve there halts the run rather than standing in a fabricated expert."
     },
     {
       "name": "council",
       "source": "./council",
-      "description": "Multi-perspective council for one open decision: agency-agents specialists give independent round-one positions and argue explicit cruxes. Hosts with canonical records may reach CONVERGED after audit and human confirmation. Weaker hosts with fresh seats return ADVISORY, which is unaudited and non-authorizing. Something already written belongs in review-loop. Requires the agency-agents catalog at ~/.agency-agents."
+      "description": "Multi-perspective council for one open decision, including architecture selection when a draft already exists and the goal is to choose rather than edit. Incumbent-draft mode adopts a neutral brief, runs blind challenger search, then reveals and compares the draft. Canonical records may reach CONVERGED; weaker hosts return unaudited, non-authorizing ADVISORY. Use review-loop to find and fix artifact defects to APPROVE. Requires ~/.agency-agents."
     },
     {
       "name": "opsx",
