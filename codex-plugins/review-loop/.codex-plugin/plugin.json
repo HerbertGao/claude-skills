@@ -1,6 +1,6 @@
 {
   "name": "review-loop",
-  "version": "2026.8.0",
+  "version": "2026.8.1",
   "description": "Codex port of the adversarial review loop workflow using Codex subagents and agency-agents reviewer personas. Includes the simplicity and cold-read legibility counter-pressures, so an iterated review neither bloats the code nor turns a spec into a patch pile only the loop can read. Works on written artifacts that need finding and fixing to pass; architecture selection belongs to council even when a draft already exists. Requires the agency-agents catalog at ~/.agency-agents (install per the README); a role it cannot resolve there halts the run rather than standing in a fabricated expert.",
   "author": {
     "name": "HerbertGao",
