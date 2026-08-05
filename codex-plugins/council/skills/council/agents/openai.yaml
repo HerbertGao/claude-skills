@@ -1,4 +1,5 @@
+---
 interface:
   display_name: "Council"
-  short_description: "Audited CONVERGED or non-authorizing ADVISORY council"
-  default_prompt: "Use $council to weigh this decision from several expert perspectives."
+  short_description: "Draft-aware CONVERGED or non-authorizing ADVISORY council"
+  default_prompt: "Use $council to compare options, including a draft."

@@ -6,11 +6,20 @@ HerbertGao 的自托管 AI coding skills 仓库。三个对抗式质量控制 sk
 
 | Skill | 做什么 | 何时用 |
 | --- | --- | --- |
-| **review-loop** | 对抗式 review 循环:三个跨家族 reviewer 并行撕产物 → 合并 triage → 最小化修复 → 重审到终态 | 已经写出来的东西要撕:OpenSpec 变更 / 提案 / spec / diff / 纯散文 |
-| **council** | 多专家评议会:从 catalog 拉 4+ 真专家独立首轮 → 记 crux → 辩论 → 人类价值裁决 | 还没写任何产物的开放决策:选型 / 架构 / 要不要做 |
+| **review-loop** | 对抗式 review 循环:三个跨家族 reviewer 并行撕产物 → 合并 triage → 最小化修复 → 重审到终态 | 对已有 OpenSpec 变更 / 提案 / spec / diff / 纯散文找错并修到通过 |
+| **council** | 多专家评议会:从 catalog 拉 4+ 真专家独立首轮 → 记 crux → 辩论 → 人类价值裁决 | 做开放决策；架构草稿已存在但目标是保留 / 替换 / 组合 / 未决时也用它 |
 | **opsx** | 编排式实现 OpenSpec 变更:按范围分组 → 每组派 subagent → 主 agent 只做状态管理与 review | 用 subagent 分组方式实现 OpenSpec 任务 |
 
 用序:先 `council` 定方向,再 `review-loop` 撕产物。`council` 有 canonical dispatch/return 记录时审计后可出 `CONVERGED`;只有 fresh-context 席位而缺记录时仍完成辩论,但只出不认证、不授权实现的 non-authorizing `ADVISORY`。
+
+路由按**终点**而不是“有没有文档”判断：
+
+| 输入与期望终点 | 使用方式 |
+| --- | --- |
+| 没有草稿，要选择架构 / 技术 | `council` greenfield mode |
+| 已有架构草稿，要比较后决定保留 / 替换 / 组合 / 未决 | `council` incumbent-draft mode（不修改草稿） |
+| 已有工件，要找错、修复并迭代到 `APPROVE` | `review-loop` |
+| 既要选架构又要改稿 | 先 `council`；方向未决则停，已决后再交给 `review-loop` |
 
 ## 前置
 
@@ -61,6 +70,10 @@ codex plugin add opsx@herbertgao-skills-codex
 | opsx | `general-purpose` subagent | 按 catalog 源路径 + 角色名解析 |
 
 语言约定:`council` / `review-loop` 全线英文(避免中英孪生漂移);`opsx` 全线中文(配 openspec-cn)。
+
+## 维护约束
+
+修改任何 `SKILL.md` 的 frontmatter `description` 时，解析后的描述必须不超过 **1024 个字符**（建议控制在 900 字符以内以保留余量），并同步检查通用版、Claude plugin 版、Codex 版及已安装副本，避免宿主报告 `description exceeds 1024 characters`。
 
 ## 更多
 

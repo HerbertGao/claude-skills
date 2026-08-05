@@ -3,7 +3,8 @@ version: "1"
 skill: ../../skills/openspec-apply-change-subagent
 
 defaults:
-  agent: claude
+  agent: command
+  command: bash bin/run-pi.sh
   provider: local
   trials: 5
   timeout: 1800
@@ -23,6 +24,9 @@ tasks:
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
       ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: fixtures/openspec-cn
         dest: bin/openspec-cn
         chmod: "+x"

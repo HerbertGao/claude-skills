@@ -244,6 +244,26 @@
           "literal": "must never cite agreement as support",
           "selector": "before-section-prefix:0.",
           "count": 1
+        },
+        {
+          "literal": "decision mode: <greenfield|incumbent-draft>",
+          "selector": "fences-in-section-prefix:0.",
+          "count": 1
+        },
+        {
+          "literal": "Read references/incumbent-draft-mode.md completely",
+          "selector": "section-prefix:1.",
+          "count": 1
+        },
+        {
+          "literal": "kind: <seat|re-dispatch|retry|cross-exam|DA|DA-final|tie-breaker|label|compare|audit>",
+          "selector": "fences-in-section-prefix:2.",
+          "count": 1
+        },
+        {
+          "literal": "Incumbent decision: <n/a|keep|replace|combine|unresolved>",
+          "selector": "section-prefix:8.",
+          "count": 1
         }
       ],
       "catalog_paths": {
@@ -316,6 +336,32 @@
         "ADVISORY",
         "CONVERGED",
         "non-authorizing"
+      ]
+    },
+    "incumbent-audit-ids": {
+      "targets": [
+        {
+          "file": "skills/council/references/incumbent-draft-mode.md",
+          "selector": "text"
+        },
+        {
+          "file": "council/skills/council/references/incumbent-draft-mode.md",
+          "selector": "text"
+        },
+        {
+          "file": "codex-plugins/council/skills/council/references/incumbent-draft-mode.md",
+          "selector": "text"
+        }
+      ],
+      "required": [
+        "separate I0–I5 namespace",
+        "**I0 — blind ordering:**",
+        "**I1 — incumbent intake:**",
+        "**I2 — qualification:**",
+        "**I3 — source integrity:**",
+        "**I4 — adversarial coverage:**",
+        "**I5 — record and read-only gate:**",
+        "I0 or I1 failure takes the main fabrication path"
       ]
     }
   },

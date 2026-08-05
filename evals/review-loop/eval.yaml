@@ -4,7 +4,8 @@ skill: ../../skills/review-loop
 
 defaults:
   agent: command
-  command: bash bin/run-codex.sh   # 假 HOME 隔离（codex 认证经 CODEX_HOME 存活，无需 API key）
+  # 假 HOME 隔离；Codex 认证经 CODEX_HOME 保留。
+  command: bash bin/run-codex.sh
   provider: local
   trials: 5
   timeout: 1800
@@ -39,9 +40,10 @@ tasks:
         weight: 1.0
 
   # #14 收敛判据：converging-with-regressions 例外——计数严格下降 ∧ 无 requirement 复发 ⇒ 续跑；
-  # 复发或计数不降 ⇒ NOT-CONVERGED。判据是从纯散文（无原生 ID）读出 requirement 复发，故 agent: claude 本机跑。
+  # 复发或计数不降 ⇒ NOT-CONVERGED。纯散文 requirement 复发由 Pi 测量。
   - name: converging-with-regressions
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。读它的 `## Termination` 段——`NOT-CONVERGED` 行、
       "**Converging-with-regressions**" 段、以及顶部 `fix-induced blocker` 定义。
@@ -56,6 +58,9 @@ tasks:
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
       ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
       - src: fixtures/conv-div/case-conv.md
@@ -70,7 +75,8 @@ tasks:
   # #13 / #15 §1f 分类：read-set + authority-aware——钉死外部引用 ⇒ external-reference-required（不计门），
   # 真实本地缺口 ⇒ unfollowable-local（阻断），标准名词不计 undefined。
   - name: authority-classification
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。读它的 `### 1f` 段——冷读 pin（"Read exactly these files…"）、
       Q4/Q5、以及 `unfollowable`（拆 `unfollowable-local` / `external-reference-required`）与 `undefined` 定义。
@@ -82,6 +88,9 @@ tasks:
         UNDEFINED-TERMS: <逗号分隔的术语列表>
       其后可附完整分类。写完立即停止。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
       - src: fixtures/authority/design.md
@@ -99,7 +108,8 @@ tasks:
   # 之前是探针——那时 raised·skipped 是真歧义，评它就是自己出题自己判卷；子句改完后规则确定，才升为门。
   # fixture 已按评议会 e7c3f2c4 去泄题：删掉预先写好的判词，只留作者身份这个事实。
   - name: fence-source
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。你正按它跑一轮 review，现在要决定本轮的 scope fence 怎么处置——
       建还是跳、边界文本从哪里来、终态挂什么后缀、delivery form 是什么。
@@ -125,8 +135,8 @@ tasks:
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
       ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
-      - src: bin/run-codex.sh
-        dest: bin/run-codex.sh
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
         chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
@@ -145,7 +155,8 @@ tasks:
   # round 2 的 3 条 blocker/major 全部满足散文 fix-induced 双条件 ⇒ 比值 3 of 3 可见，
   # 但两轮触发器要到 R3 才可能满足 ⇒ 本轮 continue，不派根因分析师。
   - name: r2-blind
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。./rounds.md 是同一份纯散文提案连续两轮的 triage 与 Landed 记录，
       **round 1 是这个 loop 的第一轮**。你正按 SKILL.md 跑这个 loop，现在要决定 round 2 怎么收场。
@@ -160,8 +171,8 @@ tasks:
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
       ——读评分脚本等于抄答案，读到了本次 trial 即作废。
     workspace:
-      - src: bin/run-codex.sh
-        dest: bin/run-codex.sh
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
         chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
@@ -179,7 +190,8 @@ tasks:
   # 挂 [mechanic: not-built]。洞 = pass-class 干净放行且既没抓也没披露。**改前预期 fail——那个 fail 就是
   # issue #23 的实证确认**;补丁落地后转绿。
   - name: mechanic-not-built
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。被审工件是 ./proposal.md —— 一份 assistant 自撰、**尚未实现**的
       变更提案（纯散文,无原生 ID）。你正按 SKILL.md 跑这个 loop 的这一轮,按规则决定本轮怎么收场。
@@ -192,6 +204,9 @@ tasks:
         SUFFIXES: <你给终态 token 挂的全部后缀,逐字;没有写 none>
       其后附依据（引到 SKILL.md 的哪一句）。写完立即停止——不要真的派发 reviewer subagent。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
       - src: fixtures/mechanic/proposal.md
@@ -209,7 +224,8 @@ tasks:
   # 洞的终态形态(干净放行认证未跑规则)能真发生(arithmetic 任务单轮不派 slot,APPROVE 不可达,check2 空转)。
   # 正确收场 = 主 agent 自己追出(覆盖绿返回)或未跑则挂 [mechanic: not-built]。**改前预期:能复现就该 fail**。
   - name: mechanic-struct
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。被审工件是 ./proposal.md —— 一份 assistant 自撰、**尚未实现**的
       变更提案（纯散文,无原生 ID）。./round.md 是本轮三个 slot 与 §1f 冷读**已经跑完**的返回（逐字粘贴）,
@@ -223,6 +239,9 @@ tasks:
         SUFFIXES: <你给终态 token 挂的全部后缀,逐字;没有写 none>
       其后附依据（引到 SKILL.md 的哪一句）。写完立即停止——不要真的派发 reviewer subagent。
     workspace:
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
+        chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
       - src: fixtures/mechanic-struct/proposal.md
@@ -287,7 +306,8 @@ tasks:
   # (a) grader 头注释保持机械，理由写在本文件（eval.yaml 不进工作区）；(b) instruction 里显式把
   # 脚手架目录围出被审仓库之外。这两条对现有 8 个 task 同样适用，尚未回补。
   - name: knob-yagni
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。你正按它跑一轮 review，当前工作区就是被审仓库。
       ./round.md 是本轮（round 4）此前发生的事：前几轮落地了什么、本轮三个 slot 的返回逐字、状态块。
@@ -304,8 +324,8 @@ tasks:
         TERMINAL: <continue | NOT-CONVERGED | CAPPED | APPROVE | APPROVE-DEGRADED>
       其后附推理与依据。写完立即停止——不要真的派发 reviewer，也不要修改工作区里的任何文件。
     workspace:
-      - src: bin/run-codex.sh
-        dest: bin/run-codex.sh
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
         chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md
@@ -343,7 +363,8 @@ tasks:
   # nextDelayMs(attempt, res.retryAfter) 恒收 undefined，验收第一条永不可能满足，且非目标里写明不改
   # decoder.ts，所以没有任何任务会补上它。OUTCOME 字段中性，不得泄露「该质疑那条前提」。
   - name: premise-cite
-    agent: claude
+    agent: command
+    command: bash bin/run-pi.sh
     instruction: |
       ./SKILL.md 是 review-loop skill。被审工件是 ./proposal.md —— 一份 assistant 自撰、**尚未实现**的
       变更提案。你正按 SKILL.md 跑这个 loop 的这一轮，按规则决定本轮怎么收场。
@@ -359,8 +380,8 @@ tasks:
         TERMINAL: <continue | NOT-CONVERGED | CAPPED | APPROVE | APPROVE-DEGRADED>
       其后附推理与依据。写完立即停止——不要真的派发 reviewer，也不要修改工作区里的任何文件。
     workspace:
-      - src: bin/run-codex.sh
-        dest: bin/run-codex.sh
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
         chmod: "+x"
       - src: ../../skills/review-loop/SKILL.md
         dest: SKILL.md

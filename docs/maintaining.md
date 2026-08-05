@@ -28,6 +28,11 @@ herbertgao-skills/
 - `skills/<skill>/SKILL.md` 是通用版 SOT。`codex-plugins/` 下是它的**逐字节副本**(`check-format.py` fail-closed 地守着)。
 - `<plugin>/` 下的 Claude 版是**手工维护的平行副本**:可在 frontmatter、Platform Adapter 与宿主专属 auditor 机制上不同,但共享的辩论和终态语义必须对等。
 - `required_verbatim` 只机械守住 evaluator 会匹配的关键字面量,其余语义仍需人工 review。
+- `skills/council/references/incumbent-draft-mode.md` 是 incumbent-draft 协议 SOT；Codex 与 Claude package 中的同名 reference 保持逐字节副本。
+
+## 路由边界
+
+路由按终点而非工件是否存在：架构 / 技术选择使用 `council`，即使已有草稿；找错、修复并迭代到 `APPROVE` 使用 `review-loop`。两者都需要时先运行 council，方向未决则停止，已决后 review-loop 才能按 decision record 改稿。Council 的 incumbent-draft mode 必须保持草稿只读，并把 `keep` / `replace` / `combine` / `unresolved` 写入决策记录，而不是新增终态 token。
 
 ## 契约校验
 
