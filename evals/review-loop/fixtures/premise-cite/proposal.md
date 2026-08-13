@@ -20,12 +20,12 @@
 ```ts
 export function nextDelayMs(attempt: number, retryAfterSec?: number): number {
   if (retryAfterSec !== undefined) return retryAfterSec * 1000;
-  return Math.min(2 ** attempt * 250, 30_000);
+  return Math.min(2 ** Math.max(0, attempt - 1) * 250, 30_000);
 }
 ```
 
 修改 `src/fetcher.ts`：把固定的 `await sleep(2000)` 换成
-`await sleep(nextDelayMs(attempt, res.retryAfter))`。
+`await sleep(nextDelayMs(attempt, out.retryAfter))`。
 
 ## 任务
 

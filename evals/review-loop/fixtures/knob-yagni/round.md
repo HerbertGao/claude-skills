@@ -1,76 +1,52 @@
-# overlay 写入路径守卫 —— 本轮 review 状态
+# overlay 写入路径守卫 —— 当前 CR+RC 轮次
 
-## 被审变更
+## 被审需求
 
-能力：把降噪发件人写进机器维护的 overlay 文件 `noise_senders.overlay`。
+把降噪发件人写进机器维护的 overlay 文件 `noise_senders.overlay`。
 
-**硬 MUST（需求原文）**：反馈路径绝不能写 operator 手工维护的 `rules.yaml`，该文件必须逐字节不变。
+**硬 MUST**：反馈路径绝不能写 operator 手工维护的 `rules.yaml`，该文件必须逐字节不变。
 
-## 前几轮做过什么
+## 前几轮
 
-| 轮 | 落地 | 触发原因 |
+| 轮 | 落地 | 原因 |
 | --- | --- | --- |
-| 1 | 提案实现，无守卫，只有一条规范场景 + 注释 | — |
-| 2 | 引入 `if (resolve(overlayPath) === resolve(resolveRulesPath())) throw` | review 指出硬 MUST 不能只靠注释守 |
-| 3 | 升级为 `isSameFile`：`statSync` 的 `dev`/`ino` + realpath 退化分支 | review 指出词法比较挡不住软链与大小写不敏感盘 |
+| 1 | 提案实现，无守卫 | — |
+| 2 | `resolve(overlayPath) === resolve(resolveRulesPath())` 时拒写 | 词法路径可能直指 `rules.yaml` |
+| 3 | `statSync` 的 `dev`/`ino` + realpath/basename 退化分支 | 软链与大小写不敏感盘绕过词法比较 |
 
-`Landed:` (round 3) — `src/overlay.ts | 34 +28/-6`
+Round 3 实际增加 28 行、删除 6 行。现在是 round 4。
 
-## 本轮（round 4）三个 slot 的返回，逐字
+## Code Reviewer — CHANGES-REQUESTED
 
-### Code Reviewer — CHANGES-REQUESTED
+- **blocker** `src/overlay.ts:41` — overlay 首次写入前不存在，`statSync` 抛 `ENOENT`，冷启动崩溃。建议 try/catch 后走退化分支。
+- **major** `src/overlay.ts:52` — basename 逐字比较在大小写不敏感盘上放行 `Rules.yaml`。建议大小写折叠。
+- **minor** — 守卫已连续三轮变复杂；继续加固前应检查被保护的可配置路径是否有真实非测试消费者。
 
-- **blocker** `src/overlay.ts:41` — `statSync` 在文件不存在时抛 `ENOENT`。`resolveOverlayPath()`
-  在模块 import 期被调用，overlay 首次写入前该文件不存在 ⇒ 守卫在冷启动路径上直接崩溃。
-  修复：把 `statSync` 包进 try/catch，落到 realpath 退化分支。
-- **major** `src/overlay.ts:52` — 退化分支用 `basename(a) === basename(b)` 做词法比较。
-  macOS / Windows 的大小写不敏感盘上 `Rules.yaml` 与 `rules.yaml` 是同一个文件，比较返回 false ⇒ 守卫放行。
-  修复：退化分支的 basename 比较改为大小写折叠。
+## Reality Checker — CHANGES-REQUESTED
 
-guard checklist（Mandatory deliverable）：
+| row | file:line | 失败输入 | observed vs claim |
+| --- | --- | --- | --- |
+| 1 | `src/overlay.ts:41` | 文件不存在 | 抛 `ENOENT` vs 契约称可首次写入 |
+| 2 | `src/overlay.ts:52` | 大小写不敏感盘 | 放行 vs 契约称拒写规则文件 |
+| 3 | `src/overlay.ts:41` | 悬空软链 / `ELOOP` | CR 建议的 catch 会吞错并放行 |
+| 4 | `src/overlay.ts:41` | `EACCES` | CR 建议的 catch 会吞错并放行 |
 
-| # | file:line | 类别 | declared-coverage set | actually-effective set | equal? |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `src/overlay.ts:38` | ① guard | `{同一 inode}` | `{同一 inode, 同名不同壳, 软链}` | **no** |
-| 2 | `src/overlay.ts:52` | ① guard | `{basename 逐字相等}` | `{basename 大小写等价}` | **no** |
-| 3 | `src/overlay.ts:12` | ⑤ config fan-out | `{NOISE_OVERLAY_FILE}` | `{NOISE_OVERLAY_FILE}` | yes |
+- **blocker** rows 3/4 — 按 CR 建议 catch 全部 `statSync` 错误，会把 `ELOOP` / `EACCES` 变成成功路径，形成 false green。
 
-### Reality Checker — CHANGES-REQUESTED
-
-§1b 表（节选）：
-
-| row | file:line | 类别 | 失败输入 | observed vs claim | 终态 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `src/overlay.ts:41` | ① | 文件不存在 | 抛 ENOENT vs 契约称「返回 false」 | fixed |
-| 2 | `src/overlay.ts:52` | ① | 大小写不敏感盘 | 放行 vs 契约称「拦截」 | fixed |
-| 3 | `src/overlay.ts:41` | ① | 悬空软链 | `statSync` 抛 ELOOP，catch 吞掉 ⇒ 放行 | **unresolved** |
-| 4 | `src/overlay.ts:41` | ① | EACCES | 同上，catch 吞掉 ⇒ 放行 | **unresolved** |
-
-- **blocker** row 3/4 —— 一旦按 CR 的建议把 `statSync` 包进 try/catch，catch 会吞掉**所有**错误。
-  悬空软链、EACCES、ELOOP 三条路径全部绕过闸，而契约声称它们被拦截。这是 false green：
-  守卫报告成功，它守的东西没被守住。
-
-### Independent Reviewer（跨家族）— CHANGES-REQUESTED
-
-- **major** `src/overlay.ts:38` —— `dev`/`ino` 比较在写入**之前**做，但 overlay 文件此时可能尚未创建；
-  一旦父目录本身是软链，`resolve()` 不解析父目录，两条路径的 realpath 可能指向同一文件而比较为 false。
-- **minor** —— 守卫已连续三轮被修改，每轮修复引出下一轮的 finding。
-
-## 状态块（round 4，已回显）
+## 当前 compact record
 
 ```text
-Slots: Code Reviewer=CHANGES-REQUESTED [registered] | Reality Checker(§1b)=CHANGES-REQUESTED [registered] | Independent Reviewer=CHANGES-REQUESTED [cross-family]
-Augment: none
-Scope fence: agreed scope anchored | form: production (default) | out-of-scope findings: 0
-Anchors: ①weak ⑤weak
-Simplicity: net +22 this round / +64 cumulative (measured, from Landed:) | would-remove: -0 cumulative | over-eng: 0 open
-Legibility: n/a (no prose in this artifact at all, skip)
-Spot-audit: row 2 | re-ran 大小写不敏感盘 | observed 放行 vs claim 拦截
-Landed: src/overlay.ts | 34 +28/-6
-Regression: 2 of 5 (triage blocker/major ∩ last round's Landed) | hits: src/overlay.ts:41, src/overlay.ts:52
-Residual-floor: none
+Round: R4
+Lanes: CR=CHANGES-REQUESTED route=registered return=original | RC=CHANGES-REQUESTED route=registered return=original
+Experts: none
+Triage: blocker 3, major 1, minor 1; pending
+Fixes: none
+Checks: pending triage
+Repeated blockers: overlay-path guard (3 rounds of symptom patches)
+Root-cause: none
+Terminal: none
 ```
 
 ## 工作区
 
-被审仓库就是当前工作区。你可以读任何文件、跑任何只读命令。
+当前工作区就是被审仓库。可以读任何被审文件并运行只读命令。

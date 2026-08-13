@@ -84,18 +84,17 @@ npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
 
 ### Task 类型
 
-1. **prereq-halt** — 验证前置条件缺失时正确 STOPPED（如 catalog 不存在）
-2. **unfollowable-floor** — 冷读 SKILL.md，统计不可遵守的规则数（≤3）
-3. **advisory-routing** — 给定 host profile，验证 Platform Adapter 的模式路由（audited / advisory / stopped）和 token 判定正确
-4. **advisory-debate-shape** — 验证弱 provenance 下仍保留 opposing-only unopposed、DA、全席 cross-exam、DA-final、人类价值裁决与 minority report
-5. **incumbent-routing** — 验证已有草稿时按“做决策”与“修到通过”的终点分流，并阻断 unresolved 后的改稿 handoff
-6. **incumbent-decision** — 验证 neutral brief adoption、incumbent-blind 首轮、freeze/reveal 顺序、同准则比较、零候选诚实披露及既有终态 token
-7. **trust-execution-boundary** — 验证 council 不执行 persona/seat 提供的命令，越界检查保持 `unlookupable`，并实际运行 safe-check/redactor 检查 raw sentinel 不外泄
-8. **confidentiality-boundary** — 验证 review-loop 只接收生产者脱敏后的 canonical evidence，安全证据缺失时不得通过，并实际运行 bundled redactor
+各 skill 的任务以自己的 `eval.yaml` 为准：
+
+- **review-loop**：`portable-routing`（四级宿主 fallback）、`expert-selection`（CR+RC + 可选 0..N 精确领域专家）、`root-cause-escalation`（同一 blocker 的一次根因升级），以及保留的 `knob-yagni` / `premise-cite` 缺陷发现回归。Bundled redactor 另有 runtime self-test，但不再是 review-loop 的通过前置。
+- **council**：`prereq-halt`、`unfollowable-floor`、`advisory-routing`、`advisory-debate-shape`、`incumbent-routing`、`incumbent-decision`、`trust-execution-boundary`。
+- **opsx**：分组、前置、reconcile、checkbox 定位与 snapshot 回归。
+
+review-loop 旧三席、strong-anchor、cold-reader/simplicity 常驻 lane、confidentiality hard-stop 与 16 条 completion predicate 任务已随重协议废弃；删除原因见 `evals/review-loop/GRADERS.md`。
 
 ### Grader
 
-grader 是确定性 bash 脚本，对 `OUTCOME.md` 做逐行 exact match。支持通过 `OUTCOME_FILE` 环境变量指定输入文件（用于验证 grader 自身）：
+grader 是确定性 bash 脚本：协议题逐行精确核对，效果题核对完整必填首部与目标语义；任一必填检查失败即整题 0 分。支持通过 `OUTCOME_FILE` 环境变量指定输入文件（用于验证 grader 自身）。skillgrade 0.2.2 会把 grader 复制进 trial，因此 review-loop 的 agent wrapper 会在模型运行期间隐藏所有含答案的评测脚手架，退出后恢复给 grader：
 
 ```bash
 # 用 valid fixture 验证 grader 能正确通过

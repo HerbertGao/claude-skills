@@ -2,6 +2,8 @@ BLOCKERS: 1
 TOP-FINDING: blocker —— 提案「现状」第 1 条声明 `decode()` 已把 `Retry-After` 透传到 `DecodeResult.retryAfter`，而 `src/decoder.ts` 的 `DecodeResult` 根本没有 `retryAfter` 字段、`decode()` 也从不读该响应头；这条被声明的现状断言与源码矛盾，无任何出处
 TERMINAL: continue
 
+Terminal: none
+
 ## 依据
 
 `src/decoder.ts:1-6` 的 `DecodeResult` 逐字只有 `status` / `items` / `cursor` 三个字段。

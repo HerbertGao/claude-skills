@@ -46,60 +46,125 @@
       ],
       "tiers": [
         "registered",
-        "local"
+        "local",
+        "embedded",
+        "same-context"
       ],
       "marker_prefix": null,
-      "$comment_prefix": "Evaluator ⑦ matches this literal. It MUST be a prefix of every marker form below — that is the check that catches a stray backtick or a renamed marker silently disarming the cap.",
       "marker_forms": [],
       "required_verbatim": [
-        "A CR APPROVE without its deliverable is not a pass",
-        "CAPPED (catalog self-installed)",
-        "[local: <catalog path>]",
-        "not-run(tier unverified)",
-        "Verbatim evidence means producer-redacted canonical evidence, never a raw secret-bearing artifact.",
-        "Never paste a secret-bearing artifact into the transcript.",
-        "A second violation is `not-run(sensitive-output)`.",
-        "[REDACTED:<run-nonce>:TYPE:N]",
-        "Confidentiality-caused unavailability is a prerequisite failure, never a coverage gap",
-        "anchor unavailable(sensitive-output)",
+        {
+          "literal": "Always start with Code Reviewer and Reality Checker.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "The initial round may also include zero or multiple highly relevant domain experts under the selection rule below; there is no numeric expert-seat cap.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "Missing sandbox, worktree, read-only, tool filtering, catalog, or fresh-worker support never blocks the loop.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "1. **`[registered]`** — a matching native/custom role in a fresh worker.\n2. **`[local: <catalog path>]`** — a fresh generic worker with a trusted local persona injected. The optional catalog paths are `engineering/engineering-code-reviewer.md` and `testing/testing-reality-checker.md` under `~/.agency-agents/`.\n3. **`[embedded]`** — a fresh generic worker with the role below embedded in its prompt.\n4. **`[same-context]`** — when the host has no subagents, run two separate sequential passes in the main context, resetting the role and withholding the other pass's conclusions until both are complete.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "Original return preferred; `return: summarized` is an allowed fallback.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "The main agent dispatches every lane directly",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "Selected experts run in the initial round and add findings only.",
+          "selector": "section-prefix:Roles",
+          "count": 1
+        },
+        {
+          "literal": "They do not replace CR or RC, decide the terminal result, or rerun by default.",
+          "selector": "section-prefix:Roles",
+          "count": 1
+        },
+        {
+          "literal": "When the same blocker remains a blocker in two consecutive review rounds",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Keep one `root-cause-used` latch per semantic blocker.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Each repeated blocker gets this escalation once.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "If the only materially different approach is out of scope, use the normal `OUT-OF-SCOPE-PENDING` handoff; a user rejection or unavailable authorization leaves no applicable approach.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "After normal scope handling, the escalation fails if the expert returns no applicable approach, the selected approach cannot be applied or checked, or the same blocker remains after application and CR+RC re-review.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "There is no default round cap.",
+          "selector": "section-prefix:Terminal results",
+          "count": 1
+        },
+        {
+          "literal": "**`APPROVE`** — CR and RC both ran by any portable route; the latest round has no unresolved blocker/major; and that round applied no fixes.",
+          "selector": "section-prefix:Terminal results",
+          "count": 1
+        },
+        {
+          "literal": "Lanes: CR=<verdict> route=<registered|local:<path>|embedded|same-context> return=<original|summarized> | RC=<verdict> route=<...> return=<original|summarized>",
+          "selector": "fences-in-section-prefix:Round record",
+          "count": 1
+        },
+        "Experts: none | <role> (<artifact touchpoint -> matching role name/core mission; route>)",
+        "NOT-CONVERGED (root-cause escalation failed; N items left)",
         "bin/redact.py"
       ],
       "catalog_paths": {
         "Code Reviewer": "engineering/engineering-code-reviewer.md",
-        "Reality Checker": "testing/testing-reality-checker.md",
-        "Minimal Change Engineer": "engineering/engineering-minimal-change-engineer.md",
-        "Application Security Engineer": "security/security-appsec-engineer.md",
-        "Backend Architect": "engineering/engineering-backend-architect.md",
-        "Backend Architect (mcp-memory variant)": "integrations/mcp-memory/backend-architect-with-memory.md",
-        "Blockchain Security Auditor": "security/security-blockchain-security-auditor.md"
+        "Reality Checker": "testing/testing-reality-checker.md"
       },
       "echo_labels": [
-        "Slots:",
-        "Augment:",
-        "Scope fence:",
-        "Anchors:",
-        "Simplicity:",
-        "Legibility:",
-        "Residual-floor:",
-        "Continuation:",
-        "Spot-audit:",
-        "Landed:",
-        "Regression:"
+        "Round:",
+        "Lanes:",
+        "Experts:",
+        "Triage:",
+        "Fixes:",
+        "Checks:",
+        "Repeated blockers:",
+        "Root-cause:",
+        "Terminal:"
       ],
       "tokens": [
         "APPROVE",
         "CHANGES-REQUESTED",
-        "CLEAR",
         "APPROVE-DEGRADED",
         "CAPPED",
         "OUT-OF-SCOPE-PENDING",
-        "NOT-CONVERGED",
-        "PREREQUISITE-MISSING"
+        "NOT-CONVERGED"
       ],
-      "$comment_echo": "The status block is what the evaluator reads. A renamed label is a predicate that silently stops firing.",
       "exhaustive": [],
       "fenced_must_contain": [
-        "[local: testing/testing-reality-checker.md]"
+        "Experts:",
+        "Repeated blockers:",
+        "Root-cause:"
       ]
     },
     "openspec-apply-change-subagent": {
@@ -366,10 +431,9 @@
         }
       ],
       "required": [
-        "subagent_type: review-loop:sandbox-reviewer",
         "subagent_type: codex:codex-rescue",
-        "dispatched read-only",
-        "Codex never enters the ladder"
+        "review-only dispatch",
+        "Its absence does not block"
       ]
     },
     "council-artifact-serialization-template": {
@@ -501,30 +565,6 @@
         "redactor: unsupported input"
       ]
     },
-    "review-loop-sandboxes": {
-      "targets": [
-        {
-          "file": "review-loop/agents/sandbox-reviewer.md",
-          "selector": "text"
-        },
-        {
-          "file": "review-loop/agents/cold-reader.md",
-          "selector": "text"
-        },
-        {
-          "file": "review-loop/agents/root-cause-analyst.md",
-          "selector": "text"
-        },
-        {
-          "file": "review-loop/agents/simplicity-lens.md",
-          "selector": "text"
-        }
-      ],
-      "required": [
-        "tools: []",
-        "producer-redacted canonical"
-      ]
-    },
     "council-seat-sandbox": {
       "targets": [
         {
@@ -575,27 +615,13 @@
       "$comment": "Applied to every checked file, not per-skill: a family is only closed where nobody forgot it.",
       "regex": "CAPPED\\s*\\([^)]*\\)",
       "allowed": [
-        "CAPPED (cap-reached, N items left)",
-        "CAPPED (catalog self-installed)"
-      ]
-    },
-    {
-      "regex": "not-run\\([^)]*\\)",
-      "allowed": [
-        "not-run(...)",
-        "not-run(content-filter)",
-        "not-run(empty)",
-        "not-run(missing guard checklist)",
-        "not-run(tier unverified)",
-        "not-run(analyst-offspec)",
-        "not-run(sensitive-output)"
+        "CAPPED (budget reached; N items left)"
       ]
     },
     {
       "regex": "APPROVE-DEGRADED \\([^)]*\\)",
       "allowed": [
-        "APPROVE-DEGRADED (<all reasons, one parenthesis>)",
-        "APPROVE-DEGRADED (bloat: +N over 2 rounds, no lane removed anything)"
+        "APPROVE-DEGRADED (<reasons>)"
       ]
     },
     {
@@ -635,26 +661,16 @@
       "regex": "\\[\\s*[Ll]ocal[^\\]\\n]*\\]",
       "allowed": [
         "[local: <catalog path>]",
-        "[local: <path>]",
         "[local: <源路径>]",
-        "[local: engineering/engineering-frontend-developer.md]",
-        "[local: security/security-blockchain-security-auditor.md]",
-        "[local: testing/testing-reality-checker.md]"
+        "[local: engineering/engineering-frontend-developer.md]"
       ],
       "$comment": "A pathless local marker is the cheapest lie the ladder names; it is not a legal form."
     },
     {
-      "$comment": "The prerequisite halt is a hand-back, not a verdict; one canonical form.",
-      "regex": "PREREQUISITE-MISSING\\s*\\([^)]*\\)",
-      "allowed": [
-        "PREREQUISITE-MISSING (<lane> — see README)"
-      ]
-    },
-    {
-      "$comment": "Same closure as CAPPED: the convergence hand-back's one canonical form plus its template ellipsis.",
+      "$comment": "The convergence hand-back has one canonical portable form.",
       "regex": "NOT-CONVERGED\\s*\\([^)]*\\)",
       "allowed": [
-        "NOT-CONVERGED (fix-induced blockers in 2 consecutive rounds; N items left, listed)"
+        "NOT-CONVERGED (root-cause escalation failed; N items left)"
       ]
     }
   ]

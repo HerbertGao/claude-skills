@@ -30,11 +30,25 @@ printf 'opaque=%s\n' "$hex_value" >>"$tmp/input.txt"
 python3 "$redactor" --nonce runNonce1234 --input "$tmp/input.txt" >"$tmp/out-1.txt"
 python3 "$redactor" --nonce runNonce1234 --input "$tmp/input.txt" >"$tmp/out-2.txt"
 cmp -s "$tmp/out-1.txt" "$tmp/out-2.txt"
-! grep -qE 'FAKE_REDACTOR_TOKEN|alice@example\.test|headerValue_ABC|prefix\\"suffix|fixture-key-body' "$tmp/out-1.txt"
-! grep -q "${uri_user}:${uri_value}" "$tmp/out-1.txt"
-! grep -q "opaque=${hex_value}" "$tmp/out-1.txt"
-! grep -q "$json_secret" "$tmp/out-1.txt"
-! grep -q "$phone_value" "$tmp/out-1.txt"
+reject_regex() {
+	local pattern=$1 file=$2
+	if grep -qE "$pattern" "$file"; then
+		echo "redactor leaked content matching $pattern" >&2
+		exit 1
+	fi
+}
+reject_literal() {
+	local value=$1 file=$2
+	if grep -qF -- "$value" "$file"; then
+		echo 'redactor leaked a literal fixture value' >&2
+		exit 1
+	fi
+}
+reject_regex 'FAKE_REDACTOR_TOKEN|alice@example\.test|headerValue_ABC|prefix\\"suffix|fixture-key-body' "$tmp/out-1.txt"
+reject_literal "${uri_user}:${uri_value}" "$tmp/out-1.txt"
+reject_literal "opaque=${hex_value}" "$tmp/out-1.txt"
+reject_literal "$json_secret" "$tmp/out-1.txt"
+reject_literal "$phone_value" "$tmp/out-1.txt"
 [ "$(grep -o '\[REDACTED:runNonce1234:NAMED_SECRET:1\]' "$tmp/out-1.txt" | wc -l | tr -d ' ')" = 2 ]
 grep -q '\[REDACTED:runNonce1234:EMAIL:1\]' "$tmp/out-1.txt"
 grep -q '\[REDACTED:runNonce1234:AUTHORIZATION:1\]' "$tmp/out-1.txt"
@@ -55,7 +69,7 @@ if python3 "$redactor" --nonce runNonce1234 --input "$tmp/multiline.txt" >"$tmp/
 	exit 1
 fi
 [ ! -s "$tmp/multiline.out" ]
-! grep -qE 'line-one|line-two' "$tmp/multiline.err"
+reject_regex 'line-one|line-two' "$tmp/multiline.err"
 block_secret=multilineSecretValue
 printf 'password: |\n  %s\n' "$block_secret" >"$tmp/yaml-block.txt"
 if python3 "$redactor" --nonce runNonce1234 --input "$tmp/yaml-block.txt" >"$tmp/yaml-block.out" 2>"$tmp/yaml-block.err"; then
@@ -63,7 +77,7 @@ if python3 "$redactor" --nonce runNonce1234 --input "$tmp/yaml-block.txt" >"$tmp
 	exit 1
 fi
 [ ! -s "$tmp/yaml-block.out" ]
-! grep -q "$block_secret" "$tmp/yaml-block.err"
+reject_literal "$block_secret" "$tmp/yaml-block.err"
 structured_secret=structuredSecretValue
 printf '{"token":["%s"]}\n' "$structured_secret" >"$tmp/structured.txt"
 if python3 "$redactor" --nonce runNonce1234 --input "$tmp/structured.txt" >"$tmp/structured.out" 2>"$tmp/structured.err"; then
@@ -71,7 +85,7 @@ if python3 "$redactor" --nonce runNonce1234 --input "$tmp/structured.txt" >"$tmp
 	exit 1
 fi
 [ ! -s "$tmp/structured.out" ]
-! grep -q "$structured_secret" "$tmp/structured.err"
+reject_literal "$structured_secret" "$tmp/structured.err"
 yaml_secret=yamlStructuredSecret
 printf 'token:\n  - %s\n' "$yaml_secret" >"$tmp/yaml-sequence.txt"
 printf 'token:\n  nested: %s\n' "$yaml_secret" >"$tmp/yaml-map.txt"
@@ -81,7 +95,7 @@ for yaml_kind in sequence map; do
 		exit 1
 	fi
 	[ ! -s "$tmp/yaml-${yaml_kind}.out" ]
-	! grep -q "$yaml_secret" "$tmp/yaml-${yaml_kind}.err"
+	reject_literal "$yaml_secret" "$tmp/yaml-${yaml_kind}.err"
 done
 printf 'x\0secret' >"$tmp/binary"
 if python3 "$redactor" --nonce runNonce1234 --input "$tmp/binary" >"$tmp/binary.out" 2>"$tmp/binary.err"; then
@@ -89,6 +103,6 @@ if python3 "$redactor" --nonce runNonce1234 --input "$tmp/binary" >"$tmp/binary.
 	exit 1
 fi
 [ ! -s "$tmp/binary.out" ]
-! grep -q secret "$tmp/binary.err"
+reject_literal secret "$tmp/binary.err"
 [ "$(python3 "$redactor" --version)" = 1.0.0 ]
 echo 'redactor self-test PASS'

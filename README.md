@@ -6,7 +6,7 @@ HerbertGao 的自托管 AI coding skills 仓库。三个对抗式质量控制 sk
 
 | Skill | 做什么 | 何时用 |
 | --- | --- | --- |
-| **review-loop** | 对抗式 review 循环:三个跨家族 reviewer 并行撕产物 → 合并 triage → 最小化修复 → 重审到终态 | 对已有 OpenSpec 变更 / 提案 / spec / diff / 纯散文找错并修到通过 |
+| **review-loop** | 可移植 review 循环：固定 CR+RC，可选 0..N 个高度对口领域专家 → 合并 triage → 最小修复 → 检查并重审 | 对已有 OpenSpec 变更 / 提案 / spec / diff / 纯散文找错并修到通过 |
 | **council** | 多专家评议会:从 catalog 拉 4+ 真专家独立首轮 → 记 crux → 辩论 → 人类价值裁决 | 做开放决策；架构草稿已存在但目标是保留 / 替换 / 组合 / 未决时也用它 |
 | **opsx** | 编排式实现 OpenSpec 变更:按范围分组 → 每组派 subagent → 主 agent 只做状态管理与 review | 用 subagent 分组方式实现 OpenSpec 任务 |
 
@@ -25,8 +25,8 @@ HerbertGao 的自托管 AI coding skills 仓库。三个对抗式质量控制 sk
 
 | 依赖 | 谁需要 | 装法 | 缺了会怎样 |
 | --- | --- | --- | --- |
-| [agency-agents](https://github.com/msitarzewski/agency-agents) | 三个 skill 的专家/reviewer catalog(自己 clone、控制版本,skill 只读) | `git clone https://github.com/msitarzewski/agency-agents ~/.agency-agents` | review-loop / opsx 退到内嵌浓缩 prompt(专家更弱,终态封顶);council 凑不齐真专家就 `STOPPED` |
-| [ponytail](https://github.com/DietrichGebert/ponytail) | 推荐,非必需(主 agent 的 YAGNI 精简纪律) | 见其 README(Claude Code / Codex 有包装);无插件机制的环境把 persona 粘进全局指令文件 | 主 agent 日常写码失去精简约束;skill 内部已内嵌完整阶梯(rung 1「这东西该不该存在」落在 §1e 的 `yagni:`,rung 2–7 落在 §3 的 fix spec),不依赖它 |
+| [agency-agents](https://github.com/msitarzewski/agency-agents) | 三个 skill 的专家/reviewer catalog(自己 clone、控制版本,skill 只读) | `git clone https://github.com/msitarzewski/agency-agents ~/.agency-agents` | review-loop 的 CR/RC 退到内嵌 prompt、跳过可选领域专家并继续；opsx 按自身 fallback；council 凑不齐真专家就 `STOPPED` |
+| [ponytail](https://github.com/DietrichGebert/ponytail) | 推荐,非必需(主 agent 的 YAGNI 精简纪律) | 见其 README(Claude Code / Codex 有包装);无插件机制的环境把 persona 粘进全局指令文件 | 主 agent 日常写码失去精简约束；review-loop 已在 CR 与修复规则中内嵌必要的最小实现阶梯，不依赖它 |
 | `openspec-cn` CLI | 仅 opsx | 自行安装(不附带) | opsx 无法运行 |
 
 ## 安装
@@ -65,7 +65,7 @@ codex plugin add opsx@herbertgao-skills-codex
 
 | Skill | Claude Code plugin 版 | 通用版(npx) |
 | --- | --- | --- |
-| review-loop | tool-less CR/RC lanes + `codex:codex-rescue` + bundled redactor | 平台中立的 tool-less reviewer + 同步 redactor |
+| review-loop | 与通用版同一 CR+RC 核心；可选 `codex:codex-rescue` 额外复核 | CR+RC + 0..N 精确领域专家；普通 subagent / 内嵌 / 同上下文均可降级运行 |
 | council | tool-less `council:seat` + Claude 审计 + safe-check/redactor | tool-less seat route + 同步 safe-check/redactor |
 | opsx | `general-purpose` subagent | 按 catalog 源路径 + 角色名解析 |
 
