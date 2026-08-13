@@ -1,7 +1,7 @@
 {
   "name": "review-loop",
   "version": "2026.8.1",
-  "description": "Codex port of the adversarial review loop workflow using Codex subagents and agency-agents reviewer personas. Includes the simplicity and cold-read legibility counter-pressures, so an iterated review neither bloats the code nor turns a spec into a patch pile only the loop can read. Works on written artifacts that need finding and fixing to pass; architecture selection belongs to council even when a draft already exists. Requires the agency-agents catalog at ~/.agency-agents (install per the README); a role it cannot resolve there halts the run rather than standing in a fabricated expert.",
+  "description": "Portable adversarial review loop for Codex and other harnesses. Code Reviewer and Reality Checker always review; the initial round may add zero or multiple highly relevant Agency Agents domain experts without a seat cap. It merges findings, applies minimal fixes, checks and re-reviews them, and gives repeated blockers one fresh root-cause escalation. Missing catalog, sandbox, canonical returns, or native subagents never blocks execution; weaker hosts fall back to embedded or same-context passes.",
   "author": {
     "name": "HerbertGao",
     "url": "https://github.com/HerbertGao"
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Review Loop",
     "shortDescription": "Iterative adversarial review loop for Codex.",
-    "longDescription": "Run an adversarial review and fix loop over the current proposal and code change. The Codex port delegates review and fixes through Codex subagents and agency-agents custom agents when available.",
+    "longDescription": "Run a portable CR+RC review and fix loop over the current proposal or code change, optionally adding any number of highly relevant Agency Agents domain experts in the initial round.",
     "developerName": "HerbertGao",
     "category": "Productivity",
     "capabilities": [

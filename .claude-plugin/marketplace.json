@@ -12,7 +12,7 @@
     {
       "name": "review-loop",
       "source": "./review-loop",
-      "description": "Adversarial review loop for Claude Code — runs Codex rescue + Code Reviewer + Reality Checker in parallel over your proposal and diff, merges/triages findings, dispatches minimal fixes, and re-reviews until pass or cap. Standing counter-pressures keep its own output honest: a simplicity lens against the bloat an insert-only loop accrues, and a cold-read legibility lens so an iterated review cannot turn a spec into a patch pile only the loop can read. Works on written artifacts that need finding and fixing to pass; architecture selection belongs to council even when a draft already exists. Requires the agency-agents catalog at ~/.agency-agents (install per the README); a role it cannot resolve there halts the run rather than standing in a fabricated expert."
+      "description": "Portable adversarial review loop for Claude Code: Code Reviewer + Reality Checker are always required; the initial round may add zero or multiple highly relevant Agency Agents domain experts, with no seat cap. It merges findings, applies the smallest accepted fixes, checks and re-reviews them, and gives a repeated blocker one fresh root-cause escalation before NOT-CONVERGED. Missing catalog or structural isolation never blocks the loop; Claude may optionally add a review-only Codex rescue pass. Architecture selection belongs to council."
     },
     {
       "name": "council",

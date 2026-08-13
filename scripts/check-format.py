@@ -46,6 +46,16 @@ COUNCIL_DISPATCH_KINDS = ("seat", "re-dispatch", "retry", "cross-exam", "DA",
 COUNCIL_AUDITOR_REF = "council/skills/council/references/auditor-enumerator.md"
 COUNCIL_AUDITOR_FIXTURE = "evals/council/fixtures/claude-auditor/session.jsonl"
 COUNCIL_CLAUDE_SKILL = "council/skills/council/SKILL.md"
+REVIEW_LOOP_CONTRADICTIONS = (
+    (re.compile(r"(?i)\b(?:(?:both\s+)?(?:Code Reviewer|CR)\s*(?:and|\+|/)\s*(?:Reality Checker|RC)|(?:Code Reviewer|CR)\s+and\s+(?:Reality Checker|RC)\s+each)\b[^.\n]{0,40}\b(?:optional|may\s+be\s+omitted|need\s+not\s+run)\b"),
+     "CR and RC cannot become optional or omittable"),
+    (re.compile(r"(?i)\b(?:(?:default|fixed)\s+\d+\s*[- ]?round\s+(?:cap|limit)|(?:round\s+(?:cap|limit))\s+defaults?\s+to\s+\d+|\d+\s*[- ]?round\s+(?:cap|limit)\s+by\s+default)\b"),
+     "review-loop has no default/fixed numeric round cap"),
+    (re.compile(r"(?i)\b(?:only|at most|maximum of|max\.?)[^.\n]{0,20}(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)[^.\n]{0,20}(?:domain\s+)?expert(?:s| seats?)?\b"),
+     "review-loop has no numeric expert-seat cap"),
+    (re.compile(r"(?i)\bmissing\s+(?:a\s+)?(?:native\s+)?subagents?[^.\n]{0,30}\b(?:blocks?|halts?|stops?)\b"),
+     "missing native subagent support cannot block the loop"),
+)
 
 
 def _unique_json_object(pairs):
@@ -188,6 +198,11 @@ def check(contract: dict, files: dict, tracked) -> list:
                 fail(f"[{name}] contract lists a file that does not exist: {rel}")
                 continue
 
+            if name == "review-loop":
+                for pattern, message in REVIEW_LOOP_CONTRADICTIONS:
+                    if pattern.search(body):
+                        fail(f"[{name}] {rel}: {message}")
+
             for form in spec["marker_forms"]:
                 if form not in body:
                     fail(f"[{name}] {rel}: canonical marker form missing verbatim: {form!r}")
@@ -315,14 +330,8 @@ def check_description_lengths(files: dict, limit: int = 1024) -> list:
 
 
 def check_toolless_agent_frontmatter(files: dict) -> list:
-    """Tool-less security lanes must declare an exactly empty tool list in YAML."""
-    paths = (
-        "council/agents/seat.md",
-        "review-loop/agents/sandbox-reviewer.md",
-        "review-loop/agents/cold-reader.md",
-        "review-loop/agents/root-cause-analyst.md",
-        "review-loop/agents/simplicity-lens.md",
-    )
+    """Shipped tool-less agents must declare an exactly empty tool list in YAML."""
+    paths = ("council/agents/seat.md",)
     fails = []
     for path in paths:
         body = files.get(path)
@@ -411,6 +420,13 @@ def check_council_reference_copies(files: dict) -> list:
 
 
 HOST_KEY = "subagent_type"   # the host's dispatch key: the one thing the neutral file never names
+REVIEW_LOOP_CLAUDE_ADAPTER = (
+    "### Claude Code adapter\n\n"
+    "On Claude Code, when a cross-family extra pass would be useful, prefer a direct "
+    "review-only dispatch with `subagent_type: codex:codex-rescue`. Give it the same "
+    "review target and output contract; never use it as the fixer. Its absence does not "
+    "block CR, RC, selected domain experts, or a terminal result.\n\n"
+)
 
 
 def check_claude_copies(files: dict) -> list:
@@ -424,10 +440,9 @@ def check_claude_copies(files: dict) -> list:
 
     The predecessor of this check was a semantic parity diff whose allowed-divergence
     list was generated FROM the current diff: an answer key, green by construction.
-    So these three assertions read the files, not a snapshot of them:
-      1. the Claude copy is not a byte-copy of the neutral one — it exists because it differs;
-      2. it names the host's dispatch key — a flatten removes it;
-      3. the neutral one does not — the reverse flatten, and the whole point of it being neutral.
+    So the generic checks read the files, not a generated allowlist. Review-loop is
+    narrower: its Claude copy must equal the neutral body plus one canonical adapter
+    block, which rejects both flattening and arbitrary Claude-only core drift.
     """
     fails = []
     for src in sorted(f for f in files if re.fullmatch(r"skills/[^/]+/SKILL\.md", f)):
@@ -439,7 +454,15 @@ def check_claude_copies(files: dict) -> list:
         if HOST_KEY in files[src]:
             fails.append(f"{src} names {HOST_KEY!r} — the neutral spec must not carry a host's dispatch key")
         for c in copies:
-            if files[c] == files[src]:
+            if name == "review-loop":
+                marker = "## The loop\n"
+                if files[src].count(marker) != 1:
+                    fails.append(f"{src} must contain exactly one {marker.strip()!r} adapter insertion point")
+                    continue
+                expected = files[src].replace(marker, REVIEW_LOOP_CLAUDE_ADAPTER + marker)
+                if files[c] != expected:
+                    fails.append(f"{c} differs from {src} by more than the one canonical Claude adapter block")
+            elif files[c] == files[src]:
                 fails.append(f"{c} is a byte-copy of {src} — the Claude copy was flattened onto the neutral one")
             elif HOST_KEY not in files[c]:
                 fails.append(f"{c} never names {HOST_KEY!r} — it is not dispatching on Claude Code")
@@ -1032,13 +1055,7 @@ def self_test() -> int:
             ok = False
         print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
 
-    tool_agent_paths = (
-        "council/agents/seat.md",
-        "review-loop/agents/sandbox-reviewer.md",
-        "review-loop/agents/cold-reader.md",
-        "review-loop/agents/root-cause-analyst.md",
-        "review-loop/agents/simplicity-lens.md",
-    )
+    tool_agent_paths = ("council/agents/seat.md",)
     tool_agent_files = dict.fromkeys(tool_agent_paths, "---\ntools: []\n---\n# Agent\n")
     tool_agent_cases = [
         ("tool-less frontmatter passes", tool_agent_files, 0),
@@ -1138,6 +1155,94 @@ def self_test() -> int:
     print(f"  {'✅' if got == 1 else '❌'} {'council auditor reference is absent':<48} caught={bool(got)}  want=True")
 
     actual = load_markdown()
+
+    review_neutral = "skills/review-loop/SKILL.md"
+    review_claude = "review-loop/skills/review-loop/SKILL.md"
+    review_copy_cases = [
+        ("review-loop Claude has only canonical adapter",
+         {review_neutral: actual[review_neutral], review_claude: actual[review_claude]}, 0),
+        ("review-loop Claude core contradiction is caught",
+         {review_neutral: actual[review_neutral],
+          review_claude: actual[review_claude] + "\nCR and RC are optional.\n"}, 1),
+        ("review-loop Claude adapter drift is caught",
+         {review_neutral: actual[review_neutral],
+          review_claude: actual[review_claude].replace("review-only dispatch", "fixing dispatch", 1)}, 1),
+    ]
+    for label, fs, expect in review_copy_cases:
+        got = 1 if check_claude_copies(fs) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
+    parsed_review_contract = load_contract_json()
+    review_spec = parsed_review_contract["skills"]["review-loop"]
+    review_contract = {
+        "forbidden_everywhere": {"patterns": [], "files": []},
+        "skills": {"review-loop": review_spec},
+    }
+    review_files = {rel: actual[rel] for rel in review_spec["files"]}
+    tracked_review = set(review_spec["catalog_paths"].values())
+    route_block = (
+        "1. **`[registered]`** — a matching native/custom role in a fresh worker.\n"
+        "2. **`[local: <catalog path>]`** — a fresh generic worker with a trusted local persona injected."
+    )
+    route_swapped = (
+        "1. **`[local: <catalog path>]`** — a fresh generic worker with a trusted local persona injected.\n"
+        "2. **`[registered]`** — a matching native/custom role in a fresh worker."
+    )
+    review_mutations = [
+        ("review portable route order is pinned", route_block, route_swapped),
+        ("review experts cannot gain approval authority",
+         "Selected experts run in the initial round and add findings only.",
+         "Selected experts may approve independently."),
+        ("review default round cap cannot appear",
+         "There is no default round cap.",
+         "There is a default 3-round cap."),
+        ("review two-round escalation trigger is pinned",
+         "When the same blocker remains a blocker in two consecutive review rounds",
+         "When a blocker remains for several rounds"),
+        ("review out-of-scope handoff precedes failure",
+         "If the only materially different approach is out of scope, use the normal `OUT-OF-SCOPE-PENDING` handoff; a user rejection or unavailable authorization leaves no applicable approach.",
+         "An out-of-scope root-cause approach fails immediately."),
+        ("review no-applicable-approach exit is pinned",
+         "After normal scope handling, the escalation fails if the expert returns no applicable approach, the selected approach cannot be applied or checked, or the same blocker remains after application and CR+RC re-review.",
+         "The escalation fails only after an applied proposal is re-reviewed."),
+        ("review APPROVE requires both CR and RC",
+         "**`APPROVE`** — CR and RC both ran by any portable route; the latest round has no unresolved blocker/major; and that round applied no fixes.",
+         "**`APPROVE`** — either CR or RC ran and found no blocker."),
+        ("review full Lanes record template is pinned",
+         "Lanes: CR=<verdict> route=<registered|local:<path>|embedded|same-context> return=<original|summarized> | RC=<verdict> route=<...> return=<original|summarized>",
+         "Lanes: omitted"),
+    ]
+    for label, old, new in review_mutations:
+        mutated = {}
+        valid_mutation = True
+        for rel, body in review_files.items():
+            if body.count(old) != 1:
+                valid_mutation = False
+            mutated[rel] = body.replace(old, new, 1)
+        got = 1 if valid_mutation and check(review_contract, mutated, tracked_review) else 0
+        if got != 1:
+            ok = False
+        print(f"  {'✅' if got == 1 else '❌'} {label:<48} caught={bool(got)}  want=True")
+
+    for label, contradiction in (
+        ("review coordinated optional-CR/RC drift is caught", "CR and RC are optional."),
+        ("review coordinated slash-optional drift is caught", "CR/RC are optional."),
+        ("review coordinated omitted-lanes drift is caught", "Both Code Reviewer and Reality Checker may be omitted."),
+        ("review coordinated need-not-run drift is caught", "Code Reviewer and Reality Checker need not run."),
+        ("review coordinated default-cap drift is caught", "There is a default 3-round cap."),
+        ("review coordinated cap-defaults drift is caught", "The round cap defaults to 3."),
+        ("review coordinated cap-by-default drift is caught", "Use a 3-round cap by default."),
+        ("review coordinated expert-cap drift is caught", "Only two domain experts may run in the initial round."),
+        ("review coordinated missing-subagent block is caught", "A missing native subagent blocks the loop."),
+    ):
+        mutated = {rel: body + "\n" + contradiction + "\n" for rel, body in review_files.items()}
+        got = 1 if check(review_contract, mutated, tracked_review) else 0
+        if got != 1:
+            ok = False
+        print(f"  {'✅' if got == 1 else '❌'} {label:<48} caught={bool(got)}  want=True")
+
     inflight_cases = [
         ("auditor handles tool/failure/retry/in-flight", actual[COUNCIL_AUDITOR_REF], 0),
         ("in-flight audit retry verifies itself",

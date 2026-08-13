@@ -1,6 +1,8 @@
-BLOCKERS: 3
+BLOCKERS: 1
 TOP-FIX: 删掉 NOISE_OVERLAY_FILE 这个自由度，overlay 路径改为从 DATA_DIR 派生，守卫连同它的三条 blocker 一起消失
 TERMINAL: continue
+
+Terminal: none
 
 ## 依据
 

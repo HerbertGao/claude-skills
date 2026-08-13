@@ -7,7 +7,7 @@
 ```text
 herbertgao-skills/
 ├─ .claude-plugin/marketplace.json   # Claude Code marketplace
-├─ review-loop/ · council/ · opsx/   # Claude Code plugin(各自 SOT;review-loop 含 tool-less CR/RC + Codex rescue)
+├─ review-loop/ · council/ · opsx/   # Claude Code plugin(各自 SOT;review-loop 仅额外带可选 Codex rescue adapter)
 ├─ skills/                           # 通用版 SOT(npx skills add 安装源)
 ├─ codex-plugins/                    # Codex 原生入口:SKILL.md 为 skills/ 的逐字节副本 + agents/openai.yaml
 ├─ .agents/plugins/marketplace.json  # Codex repo-local marketplace
@@ -26,10 +26,10 @@ herbertgao-skills/
 ## 哪份是权威(SOT)
 
 - `skills/<skill>/SKILL.md` 是通用版 SOT。`codex-plugins/` 下是它的**逐字节副本**(`check-format.py` fail-closed 地守着)。
-- `<plugin>/` 下的 Claude 版是**手工维护的平行副本**:可在 frontmatter、Platform Adapter 与宿主专属 auditor 机制上不同,但共享的辩论和终态语义必须对等。
+- `<plugin>/` 下的 Claude 版通常是手工维护的平行副本；其中 review-loop 被机械限制为“通用正文 + 唯一 canonical Claude adapter”，其余 skill 可在 frontmatter、Platform Adapter 与宿主专属 auditor 机制上不同，但共享语义必须对等。
 - `required_verbatim` 只机械守住 evaluator 会匹配的关键字面量,其余语义仍需人工 review。
 - `skills/council/references/incumbent-draft-mode.md` 是 incumbent-draft 协议 SOT；Codex 与 Claude package 中的同名 reference 保持逐字节副本。
-- `skills/review-loop/bin/redact.py` 是共享 redactor SOT；review-loop / council 的通用、Claude、Codex 六份副本必须逐字节一致。`skills/council/bin/safe_check.py` 是 council 输出脱敏 wrapper SOT，三份分发副本同样 byte-lock；`check-format.py` fail-closed 校验。
+- `skills/review-loop/bin/redact.py` 是共享的**可选** redactor SOT；review-loop / council 的通用、Claude、Codex 六份副本必须逐字节一致，但它不再是 review-loop 的通过前置。`skills/council/bin/safe_check.py` 是 council 输出脱敏 wrapper SOT，三份分发副本同样 byte-lock；`check-format.py` fail-closed 校验。
 
 ## 路由边界
 
@@ -43,7 +43,7 @@ herbertgao-skills/
 - [`scripts/check-format.py`](../scripts/check-format.py) 机械校验(每次 push 跑 CI,发版前再跑一遍);`--self-test` 证明这些检查确实能 fail。
 - 有干净 `~/.agency-agents` checkout 时,会拿真实 catalog 验证路径表确实解析得到(避免 `Application Security Engineer` 之类解析到空)。
 
-角色解析梯:`review-loop` / `opsx` 是 `registered → local → embedded`;`council` 是 `catalog → synthesized`——`synthesized`(自撰 persona)最多一席、且不能当反方席,一个真专家都解析不出来就 `STOPPED`。
+角色解析梯：`review-loop` 是 `registered → local → embedded → same-context`，任何一档缺失都不阻断；其首轮领域专家可选 0..N 个，但每个已选角色都须由具体工件触点直接证明对口。`opsx` 是 `registered → local → embedded`；`council` 是 `catalog → synthesized`——`synthesized`(自撰 persona)最多一席、且不能当反方席，一个真专家都解析不出来就 `STOPPED`。
 
 ## 新增 skill
 

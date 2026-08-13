@@ -1,4 +1,4 @@
-BLOCKERS: 2
+BLOCKERS: 1
 TOP-FINDING: 提案「现状 1」把 `DecodeResult.retryAfter` 声明为既有能力，但 src/decoder.ts:1-17 里 `DecodeResult` 无该字段、`decode()` 从不读任何响应头（`grep -rn "retryAfter\|Retry-After" src/` 命中 0），而非目标又禁止改 decoder.ts —— 于是 T2 消费的 `res.retryAfter` 恒为 undefined
 TERMINAL: continue
 
