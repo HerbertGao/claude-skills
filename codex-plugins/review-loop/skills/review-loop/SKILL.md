@@ -6,8 +6,8 @@ description: >-
   multiple highly relevant Agency Agents domain experts in the initial round,
   merges findings, applies the smallest accepted fixes, validates, and
   re-reviews. The portable workflow adapts to Pi, Codex, OpenCode, Trae, and
-  weaker hosts without requiring tool-less
-  sandboxes, worktrees, a reviewer catalog, or native subagents. Use for
+  weaker hosts without requiring tool-less sandboxes, a reviewer catalog, or
+  native subagents. Use for
   “review until it passes,” “find ship-blockers,” minimal-fix adversarial
   review, and 对提案/变更做对抗性 review 循环 / review 到通过为止. Use council
   instead when the unresolved task is choosing an architecture.
@@ -27,7 +27,7 @@ A trivial typo or obvious one-line correction does not need this loop unless the
 
 **Always start with Code Reviewer and Reality Checker.** They are the only required review roles. The initial round may also include zero or multiple highly relevant domain experts under the selection rule below; there is no numeric expert-seat cap.
 
-Missing sandbox, worktree, read-only, tool filtering, catalog, or fresh-worker support never blocks the loop. Use the strongest route the host already provides, in this order:
+Missing sandbox, read-only, tool filtering, catalog, or fresh-worker support never blocks the loop. Use the strongest route the host already provides, in this order:
 
 1. **`[registered]`** — a matching native/custom role in a fresh worker.
 2. **`[local: <catalog path>]`** — a fresh generic worker with a trusted local persona injected. The optional catalog paths are `engineering/engineering-code-reviewer.md` and `testing/testing-reality-checker.md` under `~/.agency-agents/`.
@@ -36,7 +36,7 @@ Missing sandbox, worktree, read-only, tool filtering, catalog, or fresh-worker s
 
 Use parallel dispatch when the host supports it; otherwise run CR then RC. This changes latency, not validity. The main agent dispatches every lane directly; the workflow never depends on reviewers spawning descendants.
 
-Reviewers are review-only. Ask them not to edit, but do not claim prompt-only restraint is a sandbox. If the host offers read-only mode, tool filtering, a worktree, or an isolated worker, use it; absence is a disclosed capability limit, not a prerequisite failure.
+Reviewers are review-only. Ask them not to edit, but do not claim prompt-only restraint is a sandbox. Use read-only mode, tool filtering, or an isolated worker when available. Do not create or request a worktree solely for review; access to the required target checkouts is more important than a copied checkout. Missing isolation remains a disclosed capability limit, not a prerequisite failure.
 
 The optional `~/.agency-agents` checkout supplies richer personas. Never install or modify it during the loop. Missing catalog entries fall through to the embedded roles below.
 
@@ -89,6 +89,10 @@ Catalog, model-family diversity, and structural isolation improve confidence but
 ## The loop
 
 ### 0. Establish the review target
+
+Resolve review roots before dispatch. Track the **artifact root** that owns the proposal/spec and the **implementation root** that owns the code, diff, and tests separately; an OpenSpec change may live in an umbrella repository while its implementation lives in a nested repository. For each existing path, run `git -C <path-directory> rev-parse --show-toplevel` or an equivalent and use the repository that owns that path; for a future deliverable, use its nearest existing parent or the user-provided repository mapping; a nested repository wins over an ancestor umbrella repository for paths inside it. If implementation paths span repositories, group them by owning root. For a non-Git artifact, use its containing directory.
+
+Set each worker's cwd to the implementation root for code/diff review, or to the artifact root for prose-only review, when the host supports it. Give every worker the artifact root, every applicable implementation root, and the relevant files as absolute paths. Otherwise require repository commands through `git -C <root>` and file reads through absolute paths. A file missing only from the worker's initial cwd or umbrella checkout is not evidence that the reviewed code is absent. If a worker cannot access a required root, fall through to another portable route or `[same-context]`.
 
 Read the artifact, its diff, and the smallest relevant truth sources. State the intended behavior and boundaries using user-provided requirements or an adopted spec. Do not invent a scope fence from the artifact being reviewed.
 

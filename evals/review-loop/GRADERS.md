@@ -7,7 +7,8 @@ false-green fixture。
 ## 保留的行为面
 
 - `portable-routing`：无 sandbox、catalog、canonical return 或原生 subagent 时不再启动失败；按
-  `registered → local → embedded → same-context` 降级，原文优先、摘要兜底。
+  `registered → local → embedded → same-context` 降级，原文优先、摘要兜底。OpenSpec 在伞仓而代码在
+  独立子仓时分别记录 artifact / implementation root，不为 review 创建伞仓 worktree。
 - `expert-selection`：CR+RC 固定；具体技术/平台/监管领域明确时，可选 0..N 个高度对口专家，
   无席位上限。测试只验证 eligibility 与合法选择，**不把可选专家改成默认必派**。
 - `root-cause-escalation`：同一 semantic blocker 连续两轮后只升级一次；不同 causal chain 即使

@@ -16,13 +16,14 @@ defaults:
 tasks:
   - name: portable-routing
     instruction: |
-      Read ./SKILL.md and apply only its Portable execution and Return handling rules to
-      ./scenario.md. This is a classification exercise: do not dispatch reviewers. Write
-      OUTCOME.md with exactly these six lines first, replacing the angle-bracket choices:
+      Read ./SKILL.md and apply only its Portable execution, Return handling, and Establish
+      the review target rules to ./scenario.md. This is a classification exercise: do not dispatch reviewers. Write
+      OUTCOME.md with exactly these seven lines first, replacing the angle-bracket choices:
         CASE-A: CR=<registered|local|embedded|same-context>, RC=<same choices>, terminal-blocked=<yes|no>, return=<original|summarized|unavailable>
         CASE-B: CR=<route>, RC=<route>, terminal-blocked=<yes|no>, return=<shape>
         CASE-C: CR=<route>, RC=<route>, terminal-blocked=<yes|no>, return=<shape>
         CASE-D: CR=<route>, RC=<route>, terminal-blocked=<yes|no>, return=<shape>
+        CASE-E: artifact-root=<umbrella|nested-repo>, implementation-root=<umbrella|nested-repo>, worktree=<not-used|umbrella>, access=<absolute-path|missing>
         CATALOG-MISSING: <continue|halt>
         SANDBOX-MISSING: <continue|halt>
       You may add reasoning after those lines. Do not read graders/, tests/, prompts/, or bin/.
