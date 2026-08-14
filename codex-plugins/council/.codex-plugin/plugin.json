@@ -1,6 +1,6 @@
 {
   "name": "council",
-  "version": "2026.8.2",
+  "version": "2026.8.3",
   "description": "Multi-perspective council for one open decision, including architecture selection when a draft exists and the goal is to choose rather than edit. Incumbent-draft mode adopts a neutral brief, runs blind challenger search, then reveals and compares the draft. Capable hosts may reach CONVERGED; weaker hosts return unaudited, non-authorizing ADVISORY. Use review-loop to fix artifacts to APPROVE. Requires ~/.agency-agents.",
   "author": {
     "name": "HerbertGao",
