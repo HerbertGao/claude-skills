@@ -84,6 +84,26 @@
           "count": 1
         },
         {
+          "literal": "For each existing path, run `git -C <path-directory> rev-parse --show-toplevel` or an equivalent and use the repository that owns that path",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "a nested repository wins over an ancestor umbrella repository for paths inside it.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Otherwise require repository commands through `git -C <root>` and file reads through absolute paths.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "If a worker cannot access a required root, fall through to another portable route or `[same-context]`.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
           "literal": "1. **`[registered]`** — a matching native/custom role in a fresh worker.\n2. **`[local: <catalog path>]`** — a fresh generic worker with a trusted local persona injected. The optional catalog paths are `engineering/engineering-code-reviewer.md` and `testing/testing-reality-checker.md` under `~/.agency-agents/`.\n3. **`[embedded]`** — a fresh generic worker with the role below embedded in its prompt.\n4. **`[same-context]`** — when the host has no subagents, run two separate sequential passes in the main context, resetting the role and withholding the other pass's conclusions until both are complete.",
           "selector": "section-prefix:Portable execution",
           "count": 1

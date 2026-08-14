@@ -46,6 +46,10 @@ COUNCIL_DISPATCH_KINDS = ("seat", "re-dispatch", "retry", "cross-exam", "DA",
 COUNCIL_AUDITOR_REF = "council/skills/council/references/auditor-enumerator.md"
 COUNCIL_AUDITOR_FIXTURE = "evals/council/fixtures/claude-auditor/session.jsonl"
 COUNCIL_CLAUDE_SKILL = "council/skills/council/SKILL.md"
+REVIEW_LOOP_WORKTREE_POLICY = (
+    "Do not create or request a worktree solely for review; access to the required "
+    "target checkouts is more important than a copied checkout."
+)
 REVIEW_LOOP_CONTRADICTIONS = (
     (re.compile(r"(?i)\b(?:(?:both\s+)?(?:Code Reviewer|CR)\s*(?:and|\+|/)\s*(?:Reality Checker|RC)|(?:Code Reviewer|CR)\s+and\s+(?:Reality Checker|RC)\s+each)\b[^.\n]{0,40}\b(?:optional|may\s+be\s+omitted|need\s+not\s+run)\b"),
      "CR and RC cannot become optional or omittable"),
@@ -55,8 +59,6 @@ REVIEW_LOOP_CONTRADICTIONS = (
      "review-loop has no numeric expert-seat cap"),
     (re.compile(r"(?i)\bmissing\s+(?:a\s+)?(?:native\s+)?subagents?[^.\n]{0,30}\b(?:blocks?|halts?|stops?)\b"),
      "missing native subagent support cannot block the loop"),
-    (re.compile(r"(?i)\b(?:reviewers?|review lanes?)\b[^.\n]{0,50}\b(?:must|always|required to)\b[^.\n]{0,30}\bworktrees?\b|\bworktrees?\b[^.\n]{0,30}\b(?:required|mandatory)\b"),
-     "review-only lanes cannot require worktrees"),
 )
 
 
@@ -204,6 +206,10 @@ def check(contract: dict, files: dict, tracked) -> list:
                 for pattern, message in REVIEW_LOOP_CONTRADICTIONS:
                     if pattern.search(body):
                         fail(f"[{name}] {rel}: {message}")
+                without_policy = body.replace(REVIEW_LOOP_WORKTREE_POLICY, "", 1)
+                if re.search(r"(?i)\bworktrees?\b", without_policy):
+                    fail(f"[{name}] {rel}: worktree guidance may appear only in the "
+                         "canonical review-only prohibition")
 
             for form in spec["marker_forms"]:
                 if form not in body:
@@ -1203,6 +1209,18 @@ def self_test() -> int:
         ("review code worker cwd uses implementation root",
          "Set each worker's cwd to the implementation root for code/diff review, or to the artifact root for prose-only review, when the host supports it.",
          "Set each worker's cwd to the artifact root for every review."),
+        ("review repository ownership discovery is pinned",
+         "For each existing path, run `git -C <path-directory> rev-parse --show-toplevel` or an equivalent and use the repository that owns that path",
+         "Use the worker's initial cwd as the repository root"),
+        ("review nested repository precedence is pinned",
+         "a nested repository wins over an ancestor umbrella repository for paths inside it.",
+         "an ancestor umbrella repository wins over a nested repository."),
+        ("review absolute-path fallback is pinned",
+         "Otherwise require repository commands through `git -C <root>` and file reads through absolute paths.",
+         "Otherwise inspect only the worker's initial cwd."),
+        ("review inaccessible-root route fallback is pinned",
+         "If a worker cannot access a required root, fall through to another portable route or `[same-context]`.",
+         "If a worker cannot access a required root, report the reviewed code as absent."),
         ("review experts cannot gain approval authority",
          "Selected experts run in the initial round and add findings only.",
          "Selected experts may approve independently."),
@@ -1247,9 +1265,23 @@ def self_test() -> int:
         ("review coordinated cap-by-default drift is caught", "Use a 3-round cap by default."),
         ("review coordinated expert-cap drift is caught", "Only two domain experts may run in the initial round."),
         ("review coordinated missing-subagent block is caught", "A missing native subagent blocks the loop."),
-        ("review coordinated worktree requirement is caught", "Reviewers must always use a worktree."),
     ):
         mutated = {rel: body + "\n" + contradiction + "\n" for rel, body in review_files.items()}
+        got = 1 if check(review_contract, mutated, tracked_review) else 0
+        if got != 1:
+            ok = False
+        print(f"  {'✅' if got == 1 else '❌'} {label:<48} caught={bool(got)}  want=True")
+
+    for label, extra in (
+        ("review extra mandatory worktree wording is caught", "Each review must run in a worktree."),
+        ("review extra plural worktree wording is caught", "Use worktrees for review."),
+        ("review extra recommended worktree wording is caught", "We recommend using a worktree for review."),
+        ("review extra fronted negation is caught", "No reviewers should use a worktree."),
+        ("review extra contracted negation is caught", "Worktrees aren't required for review."),
+        ("review extra reviewer negation is caught", "Reviewers are not required to use a worktree."),
+        ("review extra worktree negation is caught", "A worktree is not required for review."),
+    ):
+        mutated = {rel: body + "\n" + extra + "\n" for rel, body in review_files.items()}
         got = 1 if check(review_contract, mutated, tracked_review) else 0
         if got != 1:
             ok = False
