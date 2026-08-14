@@ -26,7 +26,8 @@ tasks:
         CASE-E: artifact-root=<umbrella|nested-repo>, implementation-root=<umbrella|nested-repo>, worktree=<not-used|umbrella>, access=<absolute-path|missing>
         CATALOG-MISSING: <continue|halt>
         SANDBOX-MISSING: <continue|halt>
-      You may add reasoning after those lines. Do not read graders/, tests/, prompts/, or bin/.
+      For CASE-A through CASE-D, output only route class names; normalize any
+      `[local: <catalog path>]` route to `local`. You may add reasoning after those lines. Do not read graders/, tests/, prompts/, or bin/.
     workspace:
       - src: bin
         dest: bin
