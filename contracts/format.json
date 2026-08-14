@@ -64,8 +64,23 @@
           "count": 1
         },
         {
-          "literal": "Missing sandbox, worktree, read-only, tool filtering, catalog, or fresh-worker support never blocks the loop.",
+          "literal": "Missing sandbox, read-only, tool filtering, catalog, or fresh-worker support never blocks the loop.",
           "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "Do not create or request a worktree solely for review; access to the required target checkouts is more important than a copied checkout.",
+          "selector": "section-prefix:Portable execution",
+          "count": 1
+        },
+        {
+          "literal": "Track the **artifact root** that owns the proposal/spec and the **implementation root** that owns the code, diff, and tests separately; an OpenSpec change may live in an umbrella repository while its implementation lives in a nested repository.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Set each worker's cwd to the implementation root for code/diff review, or to the artifact root for prose-only review, when the host supports it.",
+          "selector": "section-prefix:The loop",
           "count": 1
         },
         {

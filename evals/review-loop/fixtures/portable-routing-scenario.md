@@ -17,3 +17,7 @@ The host has fresh generic workers, but `~/.agency-agents` is missing. It expose
 ## Case D — no subagents
 
 The host has no worker/subagent API and no catalog. It can run separate role passes sequentially in the main context.
+
+## Case E — OpenSpec umbrella plus code subrepo
+
+The session starts in `/workspace/platform`, an umbrella Git repository that owns `openspec/changes/payments/proposal.md`. The implemented code, diff, and tests live in `/workspace/platform/repos/payments`, which is a separate nested Git repository. The host's worktree option can copy only the umbrella repository, and that copy does not contain the nested repository's checkout. Fresh workers cannot change their process cwd, but they can read absolute paths and run `git -C` against both original checkouts.

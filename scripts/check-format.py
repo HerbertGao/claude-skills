@@ -55,6 +55,8 @@ REVIEW_LOOP_CONTRADICTIONS = (
      "review-loop has no numeric expert-seat cap"),
     (re.compile(r"(?i)\bmissing\s+(?:a\s+)?(?:native\s+)?subagents?[^.\n]{0,30}\b(?:blocks?|halts?|stops?)\b"),
      "missing native subagent support cannot block the loop"),
+    (re.compile(r"(?i)\b(?:reviewers?|review lanes?)\b[^.\n]{0,50}\b(?:must|always|required to)\b[^.\n]{0,30}\bworktrees?\b|\bworktrees?\b[^.\n]{0,30}\b(?:required|mandatory)\b"),
+     "review-only lanes cannot require worktrees"),
 )
 
 
@@ -1192,6 +1194,15 @@ def self_test() -> int:
     )
     review_mutations = [
         ("review portable route order is pinned", route_block, route_swapped),
+        ("review-only worktree ban is pinned",
+         "Do not create or request a worktree solely for review; access to the required target checkouts is more important than a copied checkout.",
+         "Create a worktree whenever reviewer isolation is available."),
+        ("review artifact/code roots stay separate",
+         "Track the **artifact root** that owns the proposal/spec and the **implementation root** that owns the code, diff, and tests separately; an OpenSpec change may live in an umbrella repository while its implementation lives in a nested repository.",
+         "Treat the umbrella repository as the only review root."),
+        ("review code worker cwd uses implementation root",
+         "Set each worker's cwd to the implementation root for code/diff review, or to the artifact root for prose-only review, when the host supports it.",
+         "Set each worker's cwd to the artifact root for every review."),
         ("review experts cannot gain approval authority",
          "Selected experts run in the initial round and add findings only.",
          "Selected experts may approve independently."),
@@ -1236,6 +1247,7 @@ def self_test() -> int:
         ("review coordinated cap-by-default drift is caught", "Use a 3-round cap by default."),
         ("review coordinated expert-cap drift is caught", "Only two domain experts may run in the initial round."),
         ("review coordinated missing-subagent block is caught", "A missing native subagent blocks the loop."),
+        ("review coordinated worktree requirement is caught", "Reviewers must always use a worktree."),
     ):
         mutated = {rel: body + "\n" + contradiction + "\n" for rel, body in review_files.items()}
         got = 1 if check(review_contract, mutated, tracked_review) else 0
