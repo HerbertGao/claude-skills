@@ -1,6 +1,6 @@
 {
   "name": "review-loop",
-  "version": "2026.8.3",
+  "version": "2026.8.4",
   "description": "Portable adversarial review loop for Codex and other harnesses. Code Reviewer and Reality Checker always review; the initial round may add zero or multiple highly relevant Agency Agents domain experts without a seat cap. It merges findings, applies minimal fixes, checks and re-reviews them, and gives repeated blockers one fresh root-cause escalation. Missing catalog, sandbox, canonical returns, or native subagents never blocks execution; weaker hosts fall back to embedded or same-context passes.",
   "author": {
     "name": "HerbertGao",
