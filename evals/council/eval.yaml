@@ -71,7 +71,7 @@ tasks:
     threshold: 1.0
     instruction: |
       ./SKILL.md is the council skill. Read its Platform Adapter, round-one dispatch rule,
-      advisory terminal path, and implementation boundary. Apply them to the twelve independent
+      advisory terminal path, and implementation boundary. Apply them to the fourteen independent
       host profiles in ./host-profiles.md. Write OUTCOME.md with exactly these lines first:
         PROFILE-A-MODE: <audited | advisory | stopped>
         PROFILE-A-ROUND1: <parallel | batched | n/a>
@@ -102,6 +102,11 @@ tasks:
         PROFILE-J-TOKEN: <full terminal token>
         PROFILE-K-TOKEN: <full terminal token>
         PROFILE-L-TOKEN: <full terminal token>
+        PROFILE-M-MODE: <audited | advisory | stopped>
+        PROFILE-M-ROUND1: <parallel | batched | n/a>
+        PROFILE-M-TOKEN: <full terminal token>
+        PROFILE-M-AUTHORIZES-IMPLEMENTATION: <yes | no>
+        PROFILE-N-TOKEN: <full terminal token>
       Do not add any other line. Do not run a real council or edit any source file.
 
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
@@ -109,6 +114,9 @@ tasks:
     workspace:
       - src: bin/run-codex.sh
         dest: bin/run-codex.sh
+        chmod: "+x"
+      - src: bin/run-pi.sh
+        dest: bin/run-pi.sh
         chmod: "+x"
       - src: ../../skills/council/SKILL.md
         dest: SKILL.md

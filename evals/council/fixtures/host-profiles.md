@@ -75,3 +75,16 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 
 - Audited preflight records procedure/adapter paths and full digests A before the first seat dispatch.
 - The candidate-audit payload substitutes paths or digests B; zero cruxes are open.
+
+## Profile M: Pi fresh workers expose built-in tools
+
+- The host is Pi and can dispatch fresh-context `Agent` workers, but every available worker exposes built-in file or command tools; `isolated: true` does not remove those built-ins.
+- No seat calls a tool or dispatches a descendant, and all four frozen round-one prompts can run in parallel.
+- The host does not satisfy the audited provenance and confirmation contracts.
+- The decision is analysis-only, and a scoped Git soft check detects no delta.
+
+## Profile N: advisory seat performs a side effect
+
+- Profile M's advisory premises apply.
+- A seat uses its available descendant-dispatch capability during the council run, and that action is visible to the moderator.
+- The user did not authorize the extra dispatch.

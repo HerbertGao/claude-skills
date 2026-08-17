@@ -6,11 +6,11 @@ HerbertGao 的自托管 AI coding skills 仓库。三个对抗式质量控制 sk
 
 | Skill | 做什么 | 何时用 |
 | --- | --- | --- |
-| **review-loop** | 可移植 review 循环：固定 CR+RC，可选 0..N 个高度对口领域专家 → 合并 triage → 最小修复 → 检查并重审 | 对已有 OpenSpec 变更 / 提案 / spec / diff / 纯散文找错并修到通过 |
-| **council** | 多专家评议会:从 catalog 拉 4+ 真专家独立首轮 → 记 crux → 辩论 → 人类价值裁决 | 做开放决策；架构草稿已存在但目标是保留 / 替换 / 组合 / 未决时也用它 |
-| **opsx** | 编排式实现 OpenSpec 变更:按范围分组 → 每组派 subagent → 主 agent 只做状态管理与 review | 用 subagent 分组方式实现 OpenSpec 任务 |
+| **review-loop** | 找人挑错，改完再审，直到通过或明确卡点 | 已有方案、文档或代码，需要找问题并修好 |
+| **council** | 让多位不同专家先各自判断，再讨论分歧并给出建议 | 面临技术或架构选择，不确定该走哪条路 |
+| **opsx** | 把 OpenSpec 任务分组交给多个 subagent，主 agent 负责协调和验收 | 想让多个 subagent 分工完成 OpenSpec 任务 |
 
-用序:先 `council` 定方向,再 `review-loop` 撕产物。`council` 有 canonical dispatch/return 记录时审计后可出 `CONVERGED`;只有 fresh-context 席位而缺记录时仍完成辩论,但只出不认证、不授权实现的 non-authorizing `ADVISORY`。
+用序:先 `council` 定方向,再 `review-loop` 撕产物。只有专家隔离、过程记录、审计和用户确认都完整时，`council` 才会给出 `CONVERGED`；其它能正常讨论的情况只给出不认证、不授权实现的 non-authorizing `ADVISORY`。
 
 路由按**终点**而不是“有没有文档”判断：
 
@@ -65,9 +65,9 @@ codex plugin add opsx@herbertgao-skills-codex
 
 | Skill | Claude Code plugin 版 | 通用版(npx) |
 | --- | --- | --- |
-| review-loop | 与通用版同一 CR+RC 核心；可选 `codex:codex-rescue` 额外复核 | CR+RC + 0..N 精确领域专家；普通 subagent / 内嵌 / 同上下文均可降级运行 |
-| council | tool-less `council:seat` + Claude 审计 + safe-check/redactor | tool-less seat route + 同步 safe-check/redactor |
-| opsx | `general-purpose` subagent | 按 catalog 源路径 + 角色名解析 |
+| review-loop | 固定两类审查员，必要时再加对口专家和 Codex 复核 | 先审、再小改、再复审；没有专用 subagent 也能继续 |
+| council | 优先用无工具专家；记录完整并经用户确认后可给出 `CONVERGED` | 普通 fresh subagent 也能给建议，但结果只是 `ADVISORY` |
+| opsx | 用通用实现 subagent | 按任务需要选择专家并分工 |
 
 语言约定:`council` / `review-loop` 全线英文(避免中英孪生漂移);`opsx` 全线中文(配 openspec-cn)。
 

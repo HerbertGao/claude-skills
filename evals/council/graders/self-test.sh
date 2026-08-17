@@ -37,7 +37,7 @@ fixture_run() { # $1=fixture $2=grader $3=want-exact-score
 
 echo "== fixture 对照（valid 必须 1.0，false-green 必须 <1.0 且与基线一致）=="
 fixture_run advisory-routing-valid advisory-routing.sh 1.0
-fixture_run advisory-routing-false-green advisory-routing.sh 0.84
+fixture_run advisory-routing-false-green advisory-routing.sh 0.72
 fixture_run advisory-debate-valid advisory-debate-shape.sh 1.0
 fixture_run advisory-debate-false-green advisory-debate-shape.sh 0.44
 fixture_run incumbent-routing-valid incumbent-routing.sh 1.0

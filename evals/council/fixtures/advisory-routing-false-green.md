@@ -27,6 +27,11 @@ PROFILE-I-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
 PROFILE-J-TOKEN: CONVERGED
 PROFILE-K-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
 PROFILE-L-TOKEN: UNRESOLVED (audit-failed: fabrication)
+PROFILE-M-MODE: stopped
+PROFILE-M-ROUND1: n/a
+PROFILE-M-TOKEN: STOPPED (cannot run expert seats)
+PROFILE-M-AUTHORIZES-IMPLEMENTATION: yes
+PROFILE-N-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-A-MODE: audited
 ADVISORY CERTIFIED (audit PASS)
 ADVISORY is non-authorizing but authorizes implementation.

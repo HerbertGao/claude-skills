@@ -1,15 +1,22 @@
 #!/bin/bash
 # Grades an exact, ordered and unique capability-routing schema.
-p=0; t=31; cks=""
+p=0
+t=36
+cks=""
 outcome=${OUTCOME_FILE:-OUTCOME.md}
-add(){ cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
+add() { cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
 
-check_exact(){
-  name="$1"; line_no="$2"; key="$3"; expected="$4"; message="$5"
+check_exact() {
+  name="$1"
+  line_no="$2"
+  key="$3"
+  expected="$4"
+  message="$5"
   actual=$(sed -n "${line_no}p" "$outcome" 2>/dev/null)
   count=$(grep -c "^${key}:" "$outcome" 2>/dev/null || true)
   if [ "$actual" = "$expected" ] && [ "$count" -eq 1 ]; then
-    p=$((p+1)); add "$name" true "$message"
+    p=$((p + 1))
+    add "$name" true "$message"
   else
     add "$name" false "$message"
   fi
@@ -44,6 +51,11 @@ check_exact profileI_interval 26 PROFILE-I-TOKEN 'PROFILE-I-TOKEN: UNRESOLVED (c
 check_exact profileJ_projection 27 PROFILE-J-TOKEN 'PROFILE-J-TOKEN: CONVERGED' 'Required read-only presentation projection remains allowed'
 check_exact profileK_write 28 PROFILE-K-TOKEN 'PROFILE-K-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)' 'Post-audit actual write cannot converge'
 check_exact profileL_pins 29 PROFILE-L-TOKEN 'PROFILE-L-TOKEN: UNRESOLVED (audit-failed: fabrication)' 'Post-hoc audit pins are fabrication'
+check_exact profileM_mode 30 PROFILE-M-MODE 'PROFILE-M-MODE: advisory' 'Pi tool-capable fresh workers use advisory instead of stopping'
+check_exact profileM_round1 31 PROFILE-M-ROUND1 'PROFILE-M-ROUND1: parallel' 'Pi keeps frozen round-one seats parallel when capacity allows'
+check_exact profileM_token 32 PROFILE-M-TOKEN 'PROFILE-M-TOKEN: ADVISORY (debate-converged; unaudited)' 'Pi fallback remains explicitly unaudited'
+check_exact profileM_noauth 33 PROFILE-M-AUTHORIZES-IMPLEMENTATION 'PROFILE-M-AUTHORIZES-IMPLEMENTATION: no' 'Pi advisory fallback is non-authorizing'
+check_exact profileN_side_effect 34 PROFILE-N-TOKEN 'PROFILE-N-TOKEN: STOPPED (advisory side effect detected)' 'Observed advisory descendant dispatch stops the run'
 
 bad_cert=$(grep -Ei 'ADVISORY.*(CERTIF|AUDIT[[:space:]]+PASS|[^[:alpha:]]AUDITED([^[:alpha:]]|$))' "$outcome" 2>/dev/null || true)
 bad_authority=$(awk '{ line=tolower($0); if (line !~ /advisory/) next; gsub(/non-authoriz(ed|ing)/,"",line); gsub(/does not authorize/,"",line); gsub(/cannot authorize/,"",line); gsub(/never authorizes?/,"",line); if (line ~ /authoriz/ || line ~ /implementation[^.]*approv/ || line ~ /approv[^.]*implementation/ || line ~ /advisory[^.]*may proceed/) print $0 }' "$outcome" 2>/dev/null)
@@ -52,14 +64,16 @@ bad_standalone=$(printf '%s\n' "$standalone" | grep -Eiv '^[[:space:]]*ADVISORY[
 if [ -n "$bad_standalone" ] || [ -n "$bad_cert" ] || [ -n "$bad_authority" ]; then
   add no_advisory_escalation false 'No bare, malformed, certified, audited, or authorizing ADVISORY appears anywhere'
 else
-  p=$((p+1)); add no_advisory_escalation true 'No bare, malformed, certified, audited, or authorizing ADVISORY appears anywhere'
+  p=$((p + 1))
+  add no_advisory_escalation true 'No bare, malformed, certified, audited, or authorizing ADVISORY appears anywhere'
 fi
 
 lines=$(awk 'END {print NR+0}' "$outcome" 2>/dev/null)
-if [ "$lines" -eq 29 ]; then
-  p=$((p+1)); add closed_schema true 'Outcome contains exactly the 29 required lines and no contradictory tail'
+if [ "$lines" -eq 34 ]; then
+  p=$((p + 1))
+  add closed_schema true 'Outcome contains exactly the 34 required lines and no contradictory tail'
 else
-  add closed_schema false 'Outcome must contain exactly the 29 required lines and no contradictory tail'
+  add closed_schema false 'Outcome must contain exactly the 34 required lines and no contradictory tail'
 fi
 
 score=$(awk "BEGIN {printf \"%.2f\", $p/$t}")

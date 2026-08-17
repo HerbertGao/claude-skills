@@ -27,3 +27,8 @@ PROFILE-I-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
 PROFILE-J-TOKEN: CONVERGED
 PROFILE-K-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
 PROFILE-L-TOKEN: UNRESOLVED (audit-failed: fabrication)
+PROFILE-M-MODE: advisory
+PROFILE-M-ROUND1: parallel
+PROFILE-M-TOKEN: ADVISORY (debate-converged; unaudited)
+PROFILE-M-AUTHORIZES-IMPLEMENTATION: no
+PROFILE-N-TOKEN: STOPPED (advisory side effect detected)
