@@ -2,7 +2,8 @@ BRIEF: adopted-before-seating
 DRAFT-CLAIMS: excluded-unless-neutral-adoption
 FINGERPRINTS: complete
 HARD-CONSTRAINTS: cited-brief-sources-only
-ROUND1: incumbent-blind
+PRIMARY-EXPOSURE: not-supplied
+PRIMARY-INDEPENDENCE: not-claimed
 SEARCH: mandatory-candidate-optional
 FREEZE: before-reveal
 REVEAL: after-freeze
@@ -18,3 +19,11 @@ AUDIT-IDS: I0-I5-separate
 INCUMBENT-DECISION: keep-record-field
 TERMINAL: ADVISORY (debate-converged; unaudited)
 UNRESOLVED-HANDOFF: blocked
+VISIBLE-FALLBACK: continues-advisory
+VISIBLE-EXPOSURE: visible
+VISIBLE-INDEPENDENCE: not-claimed
+VISIBLE-AGREEMENT-SUPPORT: forbidden
+VISIBLE-FREEZE: no
+VISIBLE-REVEAL: already-visible
+VISIBLE-AUDIT: not-run-advisory
+VISIBLE-TERMINAL: ADVISORY (debate-converged; unaudited)

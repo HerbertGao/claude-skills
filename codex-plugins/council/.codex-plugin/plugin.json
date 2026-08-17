@@ -1,7 +1,7 @@
 {
   "name": "council",
   "version": "2026.8.5",
-  "description": "Multi-perspective council for one open decision, including architecture selection when a draft exists and the goal is to choose rather than edit. Incumbent-draft mode adopts a neutral brief, runs blind challenger search, then reveals and compares the draft. Capable hosts may reach CONVERGED; weaker hosts return unaudited, non-authorizing ADVISORY. Use review-loop to fix artifacts to APPROVE. Requires ~/.agency-agents.",
+  "description": "Multi-perspective council for one open decision, including architecture selection when a draft exists and the goal is to choose rather than edit. It records four named first positions before synthesis and compares challengers under a neutral brief; missing isolation lowers assurance instead of blocking the debate. Capable hosts may reach CONVERGED; weaker hosts return unaudited, non-authorizing ADVISORY. Use review-loop to fix artifacts to APPROVE. Requires ~/.agency-agents.",
   "author": {
     "name": "HerbertGao",
     "url": "https://github.com/HerbertGao"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Council",
     "shortDescription": "Draft-aware CONVERGED or non-authorizing ADVISORY council.",
-    "longDescription": "Seat one agency-agents specialist per named viewpoint gap and debate one open decision. For an existing architecture draft, first adopt a neutral brief and run incumbent-blind challenger search, then reveal and compare the draft without editing it. Canonical records enable audited CONVERGED; weaker hosts produce unaudited, non-authorizing ADVISORY.",
+    "longDescription": "Seat one agency-agents specialist persona per named viewpoint gap and record first positions before synthesis. For an existing architecture draft, adopt a neutral brief, search challengers with the strongest available separation, and compare the draft without editing it. Missing isolation lowers assurance rather than blocking the debate; canonical records enable audited CONVERGED, while weaker hosts produce unaudited, non-authorizing ADVISORY.",
     "developerName": "HerbertGao",
     "category": "Productivity",
     "capabilities": [

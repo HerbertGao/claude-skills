@@ -2,7 +2,8 @@ BRIEF: adopted-before-seating
 DRAFT-CLAIMS: excluded-unless-neutral-adoption
 FINGERPRINTS: complete
 HARD-CONSTRAINTS: draft-claims-promoted
-ROUND1: draft-visible
+PRIMARY-EXPOSURE: visible
+PRIMARY-INDEPENDENCE: claimed
 SEARCH: mandatory-candidate-optional
 FREEZE: after-reveal
 REVEAL: before-freeze
@@ -18,3 +19,11 @@ AUDIT-IDS: reused-A-ids
 INCUMBENT-DECISION: keep-record-field
 TERMINAL: REPLACED
 UNRESOLVED-HANDOFF: blocked
+VISIBLE-FALLBACK: stopped
+VISIBLE-EXPOSURE: inaccessible
+VISIBLE-INDEPENDENCE: claimed
+VISIBLE-AGREEMENT-SUPPORT: allowed
+VISIBLE-FREEZE: yes
+VISIBLE-REVEAL: after-freeze
+VISIBLE-AUDIT: PASS
+VISIBLE-TERMINAL: CONVERGED

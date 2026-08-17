@@ -361,6 +361,11 @@
           "count": 1
         },
         {
+          "literal": "preflight capabilities: separation <fresh|inherited|shared> | tools <structurally-empty|available|unknown> | topology <direct-only|descendants-available|unknown> | incumbent-exposure <n/a|inaccessible|not-supplied|visible|unknown> | provenance <canonical|partial|moderator-visible|unknown>",
+          "selector": "fences-in-section-prefix:0.",
+          "count": 1
+        },
+        {
           "literal": "Read references/incumbent-draft-mode.md completely",
           "selector": "section-prefix:1.",
           "count": 1
@@ -388,6 +393,9 @@
         "Serialization here is opaque-id/digest-only.",
         "never include raw argv, resolved paths, or search literals in this artifact or a seat dispatch.",
         "structurally empty tool surface",
+        "Missing capability lowers assurance only.",
+        "never access the network, mutate state, contact an external system, or expose a sensitive value.",
+        "let all `S` manifested seat attempts reach terminal compliance handling before any aggregation or debate",
         "A worktree is never required for a read-only worker: do not request one merely to enforce read-only behavior or outside a Git repository, and never make missing worktree support a prerequisite failure for a read-only workflow."
       ],
       "catalog_paths": {

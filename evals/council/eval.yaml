@@ -71,7 +71,7 @@ tasks:
     threshold: 1.0
     instruction: |
       ./SKILL.md is the council skill. Read its Platform Adapter, round-one dispatch rule,
-      advisory terminal path, and implementation boundary. Apply them to the fourteen independent
+      advisory terminal path, and implementation boundary. Apply them to the eighteen independent
       host profiles in ./host-profiles.md. Write OUTCOME.md with exactly these lines first:
         PROFILE-A-MODE: <audited | advisory | stopped>
         PROFILE-A-ROUND1: <parallel | batched | n/a>
@@ -85,6 +85,7 @@ tasks:
         PROFILE-B-CONVERGED-REQUIRES: <comma-separated ids from audit-pass,zero-open-cruxes,human-confirmation,post-confirmation-attestation, no spaces>
         PROFILE-B-TOKEN: <full terminal token>
         PROFILE-C-TOKEN: <full terminal token>
+        PROFILE-C-SEPARATION: <fresh | inherited | shared>
         PROFILE-D-TOKEN: <full terminal token>
         PROFILE-E-MODE: <audited | advisory | stopped>
         PROFILE-E-ROUND1: <parallel | batched | n/a>
@@ -93,7 +94,7 @@ tasks:
         PROFILE-E-AUTHORIZES-IMPLEMENTATION: <yes | no>
         PROFILE-F-TOKEN: <full terminal token>
         PROFILE-G-TOKEN: <full terminal token>
-        PROFILE-E-WORKER-PREFERENCE: <restricted | full-capability | n/a>
+        PROFILE-E-TOOLS: <structurally-empty | available-unused | read-only-observed | unknown>
         PROFILE-E-MODEL-CENSUS: <host-recorded | unknown>
         PROFILE-E-ASSURANCE-GAPS: <comma-separated canonical gap ids in the order the skill's §0 echo enumerates them, no spaces | none>
         PROFILE-E-SOFT-CHECK: <git-snapshot | other | none>
@@ -104,9 +105,18 @@ tasks:
         PROFILE-L-TOKEN: <full terminal token>
         PROFILE-M-MODE: <audited | advisory | stopped>
         PROFILE-M-ROUND1: <parallel | batched | n/a>
+        PROFILE-M-TOOLS: <structurally-empty | available-unused | read-only-observed | unknown>
+        PROFILE-M-EVIDENCE: <seat-local | moderator-ruling>
         PROFILE-M-TOKEN: <full terminal token>
         PROFILE-M-AUTHORIZES-IMPLEMENTATION: <yes | no>
         PROFILE-N-TOKEN: <full terminal token>
+        PROFILE-N-TOPOLOGY: <direct-only | descendants-available | descendants-observed | unknown>
+        PROFILE-N-ATTRIBUTION: <parent-seat | new-seat>
+        PROFILE-N-SEATS: <number>
+        PROFILE-O-TOKEN: <full terminal token>
+        PROFILE-P-TOKEN: <full terminal token>
+        PROFILE-Q-TOKEN: <full terminal token>
+        PROFILE-R-AGGREGATION: <waits-for-all-S | started-after-four>
       Do not add any other line. Do not run a real council or edit any source file.
 
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**
@@ -201,8 +211,8 @@ tasks:
         run: bash graders/incumbent-routing.sh
         weight: 1.0
 
-  # Replay the incumbent-blind protocol, including honest zero-challenger
-  # handling.
+  # Replay incumbent candidate search, including honest zero-challenger and
+  # exposure handling.
   - name: incumbent-decision
     agent: command
     command: bash bin/run-pi.sh
@@ -216,13 +226,14 @@ tasks:
         DRAFT-CLAIMS: <excluded-unless-neutral-adoption | hard-requirements>
         FINGERPRINTS: <complete | incomplete>
         HARD-CONSTRAINTS: <cited-brief-sources-only | draft-claims-promoted>
-        ROUND1: <incumbent-blind | draft-visible>
+        PRIMARY-EXPOSURE: <inaccessible | not-supplied | visible | unknown>
+        PRIMARY-INDEPENDENCE: <certified | not-claimed | claimed>
         SEARCH: <mandatory-candidate-optional | mandatory-candidate-mandatory>
         FREEZE: <before-reveal | after-reveal>
         REVEAL: <after-freeze | before-freeze>
         COMPARE: <one-per-compliant-seat | optional>
         SHARED-CRITERIA: <same-for-all-candidates | candidate-specific>
-        DECISION-BASE: <compare-returns | blind-search-returns>
+        DECISION-BASE: <compare-returns | candidate-search-returns>
         ZERO-CHALLENGER: <allowed-with-ledger-and-DA | fabricate-one>
         COMBINE: <qualify-as-candidate | compromise-default>
         DIGEST: <unchanged | changed>
@@ -232,6 +243,14 @@ tasks:
         INCUMBENT-DECISION: <keep-record-field | omitted>
         TERMINAL: <full terminal token>
         UNRESOLVED-HANDOFF: <blocked | allowed>
+        VISIBLE-FALLBACK: <continues-advisory | stopped>
+        VISIBLE-EXPOSURE: <visible | inaccessible | unknown>
+        VISIBLE-INDEPENDENCE: <not-claimed | claimed>
+        VISIBLE-AGREEMENT-SUPPORT: <forbidden | allowed>
+        VISIBLE-FREEZE: <yes | no>
+        VISIBLE-REVEAL: <already-visible | after-freeze>
+        VISIBLE-AUDIT: <not-run-advisory | PASS>
+        VISIBLE-TERMINAL: <full terminal token>
       Do not dispatch workers or edit source files.
 
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**。

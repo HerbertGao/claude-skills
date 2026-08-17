@@ -1,6 +1,6 @@
 # Incumbent-draft decision mode
 
-Read this file completely when an architecture or technology decision has an existing draft and the requested terminal is a choice rather than an edit. This mode changes candidate discovery and comparison; the main `SKILL.md` still governs seating, debate, assurance, human value rulings, and terminal tokens.
+Read this file completely when an architecture or technology decision has an existing draft and the requested terminal is a choice rather than an edit. This mode changes candidate discovery and comparison; the main `SKILL.md` still governs seating, debate, capability disclosure, assurance, human value rulings, and terminal tokens.
 
 ## Routing boundary
 
@@ -25,16 +25,25 @@ Before seating or any specialist dispatch:
 
 The moderator has read the draft and cannot become psychologically blind. Source citations, explicit exclusions, human adoption, and exact fingerprint scans reduce anchoring; they do not prove semantic neutrality. Record that limit in the decision's Assurance section.
 
-## Incumbent-blind round one
+## Candidate search and incumbent exposure
 
-Derive axes, named gaps, the proposition, and all round-one truth sources only from the adopted neutral brief. `Round-1 manifest:` and every first functional round-one prompt, retry, and compliance re-dispatch must exclude:
+Derive axes, named gaps, the proposition, and the shared round-one truth-source baseline only from the adopted neutral brief. Before producing positions, record one capability value:
+
+- `incumbent-exposure: inaccessible` — the route structurally cannot receive or open the incumbent. This is required for audited challenger-independence claims.
+- `incumbent-exposure: not-supplied` — the seat-facing prompt/pass omits the incumbent, but structural inaccessibility is not proven. Advisory only; record the `incumbent-exposure` assurance gap and do not call it blind.
+- `incumbent-exposure: visible` — inherited/shared context, prompt content, or observed access exposes the incumbent. Continue as draft-visible advisory search and comparison.
+- `incumbent-exposure: unknown` — exposure cannot be determined. Treat it like visible for claims.
+
+For `inaccessible` and `not-supplied`, `Round-1 manifest:` and every first functional round-one prompt/pass, retry, and compliance re-dispatch exclude:
 
 - the incumbent source locator, body, digest, and every declared fingerprint;
 - draft-only assumptions or criteria;
 - wording such as `incumbent`, `existing draft`, `current design`, or `challenge the current design`;
 - another seat's candidate, return, path, or position.
 
-Each round-one seat performs candidate search rather than reviewing an unnamed incumbent. Append this contract to the normal §2 return:
+For `visible` or `unknown`, still derive the question, hard constraints and shared criteria only from the adopted neutral brief. Incumbent knowledge may inform a candidate search but cannot promote a draft-only claim, narrow the search quota, change a shared criterion, or count as challenger independence.
+
+Each round-one seat performs candidate search. Append this contract to the normal §2 position:
 
 ```text
 Candidate search:
@@ -42,17 +51,17 @@ Candidate search:
 Candidate: <normalized candidate | NO QUALIFYING CANDIDATE>
 ```
 
-A normalized candidate contains: candidate id; topology/components and data flow; how it satisfies each hard constraint; principal trade-offs; assumptions; and evidence or an observable falsifier. A seat may honestly return `NO QUALIFYING CANDIDATE`; it may not weaken a hard constraint or manufacture a straw candidate to fill the matrix. The ordinary compliance re-dispatch applies when search evidence or a required field is absent.
+A normalized candidate contains: candidate id; topology/components and data flow; how it satisfies each hard constraint; principal trade-offs; assumptions; and evidence or an observable falsifier. A seat may honestly return `NO QUALIFYING CANDIDATE`; it may not weaken a hard constraint or manufacture a straw candidate to fill the matrix. The ordinary compliance retry applies when search evidence or a required field is absent.
 
-After every round-one seat is terminal and compliance handling is complete, emit exactly one `Round-1 returns frozen:` record with the included dispatch ids/digests. No round-one retry or re-dispatch may occur after that record.
+After every round-one seat/pass is terminal and compliance handling is complete, emit exactly one search-completion record with the included dispatch/pass ids or digests. For `inaccessible` or `not-supplied`, name it `Round-1 returns frozen:` and perform no later round-one retry before reveal. For `visible` or `unknown`, name it `Round-1 search complete:` and record `reveal: already-visible`; never claim freeze/reveal ordering proved candidate independence.
 
-## Reveal, qualify, and compare
+## Normalize, qualify, and compare
 
-Only after `Round-1 returns frozen:`:
+After the search-completion record:
 
-1. Emit `Incumbent reveal:` with the source locator, intake digest, current digest, and a source-cited normalized representation using the same candidate schema. A digest change is an integrity failure.
-2. Deduplicate challengers without erasing their search provenance. Build `Qualification ledger:` with every considered candidate and either `qualified` or the hard constraint/evidence that disqualified it. Zero qualified challengers is legal when every compliant seat searched and every rejection is recorded.
-3. Dispatch one post-reveal `kind: compare` turn per compliant seat. Give each seat the adopted brief, unchanged shared criteria, equal-format incumbent and challenger representations, qualification ledger, its own frozen round-one return, and all candidates' search provenance.
+1. Emit `Incumbent reveal:` after `Round-1 returns frozen:` for `inaccessible`/`not-supplied`, or `Incumbent normalization (already visible):` for `visible`/`unknown`. Include the source locator, intake digest, current digest, and a source-cited normalized representation using the same candidate schema. A digest change is an integrity failure.
+2. Deduplicate challengers without erasing their search provenance or exposure status. Build `Qualification ledger:` with every considered candidate and either `qualified` or the hard constraint/evidence that disqualified it. Zero qualified challengers is legal when every compliant seat searched and every rejection is recorded.
+3. Produce one `kind: compare` position per compliant seat. Give each seat the adopted brief, unchanged shared criteria, equal-format incumbent and challenger representations, qualification ledger, its own round-one position, and all candidates' search provenance.
 4. Require this compare return:
 
 ```text
@@ -64,7 +73,7 @@ Strongest argument against my preference: <mandatory>
 What would change my mind: <main §2 form>
 ```
 
-For this mode the **decision-base return** is each seat's compliant compare return, not its blind round-one candidate search. §3's bins, provenance, fact criteria, value mapping, cross-examination, DA, DA-final, and consensus quantifier consume decision-base returns. Blind search establishes candidate independence; it is not a vote against an incumbent the seat had not seen.
+For this mode the **decision-base return** is each seat's compliant compare return, not its round-one candidate search. §3's bins, provenance, fact criteria, value mapping, cross-examination, DA, DA-final, and consensus quantifier consume decision-base returns. Only `incumbent-exposure: inaccessible` may support an audited challenger-independence claim; search is never a vote against the incumbent.
 
 `combine` is not a compromise shortcut. Normalize the composite as its own candidate, check every hard constraint, score every shared criterion, and state integration and complexity costs. Otherwise the preference is non-compliant.
 
@@ -77,25 +86,26 @@ Add these fields to §8:
 ```text
 Decision mode: incumbent-draft
 Incumbent decision: <keep|replace|combine|unresolved>
+Incumbent exposure: <inaccessible|not-supplied|visible|unknown> · challenger independence claimed <yes|no>
 Incumbent digest: intake sha256:<digest> · final sha256:<digest> · unchanged <yes|no>
 Candidates: considered <n> · qualified <n> · disqualified <n>
 ```
 
 The Decision section names the selected challenger or composite and traces it through the comparison matrix. `keep`, `replace`, `combine`, and `unresolved` are decision-record values, never terminal tokens. Assurance still uses only `CONVERGED`, `ADVISORY (…)`, `UNRESOLVED (…)`, or `STOPPED (…)`.
 
-A council can debate-converge on `Incumbent decision: unresolved` when every seat agrees that no current candidate qualifies. Do not convert the disposition into a fabricated selection. The record includes the adopted brief, adoption response, fingerprints, freeze/reveal order, qualification ledger, matrix, and the explicit sentence `Incumbent draft edited: no`.
+A council can debate-converge on `Incumbent decision: unresolved` when the decision-base positions leave no current candidate qualified. Do not convert agreement into support or the disposition into a fabricated selection. The record includes the adopted brief, adoption response, fingerprints, exposure, search-completion record, qualification ledger, matrix, and the explicit sentence `Incumbent draft edited: no`.
 
-Append to the Quality line: `decision-mode incumbent-draft | incumbent <keep|replace|combine|unresolved> | challengers <qualified>/<considered> | freeze yes | reveal after-freeze`.
+Append to the Quality line: `decision-mode incumbent-draft | incumbent <keep|replace|combine|unresolved> | challengers <qualified>/<considered> | incumbent-exposure <inaccessible|not-supplied|visible|unknown> | freeze <yes|no> | reveal <after-freeze|already-visible>`.
 
 ## Audit additions
 
 In audited mode the fresh auditor runs the main A0–A9 checks plus this separate I0–I5 namespace:
 
-- **I0 — blind ordering:** verify the incumbent-procedure pin, adoption → manifest → round-one dispatches → freeze → reveal → compare ordering; `compare` is seat-facing. Exact-scan every round-one manifest/prompt for the locator, fingerprints, draft-only claims, and forbidden incumbent-hint wording. Leakage or reveal before freeze is fabrication.
+- **I0 — blind ordering:** audited mode requires `incumbent-exposure: inaccessible`; verify the incumbent-procedure pin, adoption → manifest → round-one dispatches → freeze → reveal → compare ordering; `compare` is seat-facing. Exact-scan every round-one manifest/prompt for the locator, fingerprints, draft-only claims, and forbidden incumbent-hint wording. Leakage, another exposure value, or reveal before freeze is fabrication.
 - **I1 — incumbent intake:** verify the neutral brief and platform-authored adoption predate seating; every hard constraint cites a brief source; every draft-origin claim is excluded or separately adopted in solution-neutral language. Fabricated or missing adoption is fabrication.
-- **I2 — qualification:** recompute qualification and aggregation from blind-search plus decision-base returns; verify incumbent, challengers, and composites use the same constraints and criteria.
+- **I2 — qualification:** recompute qualification and aggregation from candidate-search plus decision-base returns; verify incumbent, challengers, and composites use the same constraints and criteria.
 - **I3 — source integrity:** compare incumbent quotations and normalized fields with the source at the intake digest.
 - **I4 — adversarial coverage:** verify DA attacked the qualification ledger and any zero-challenger conclusion, and that every broken target reopened qualification.
 - **I5 — record and read-only gate:** reconcile decision mode, counts, freeze/reveal, one compare dispatch per compliant seat, disposition, and `compare` in the model census; verify intake digest equals final digest, no tool wrote the incumbent, and the record says `Incumbent draft edited: no`.
 
-I0 or I1 failure takes the main fabrication path with no re-audit. Exact scans cannot detect every paraphrase or moderator bias; disclose that audit floor rather than claiming perfect blindness.
+I0 or I1 failure takes the main fabrication path with no re-audit. Exact scans cannot detect every paraphrase or moderator bias; disclose that audit floor rather than claiming perfect blindness. Advisory mode skips I0–I5 regardless of exposure and must not borrow their claims.

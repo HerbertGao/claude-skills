@@ -66,7 +66,7 @@ codex plugin add opsx@herbertgao-skills-codex
 | Skill | Claude Code plugin 版 | 通用版(npx) |
 | --- | --- | --- |
 | review-loop | 固定两类审查员，必要时再加对口专家和 Codex 复核 | 先审、再小改、再复审；没有专用 subagent 也能继续 |
-| council | 优先用无工具专家；记录完整并经用户确认后可给出 `CONVERGED` | 普通 fresh subagent 也能给建议，但结果只是 `ADVISORY` |
+| council | 优先使用宿主已有的最强隔离；记录完整并经用户确认后可给出 `CONVERGED` | 四个具名视角、至少两个实质分歧即可运行；缺失隔离能力只降低为 non-authorizing `ADVISORY` |
 | opsx | 用通用实现 subagent | 按任务需要选择专家并分工 |
 
 语言约定:`council` / `review-loop` 全线英文(避免中英孪生漂移);`opsx` 全线中文(配 openspec-cn)。

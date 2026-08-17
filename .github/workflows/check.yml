@@ -1,16 +1,17 @@
 name: check
 
-# The specs carry runtime strings their own evaluators match by literal (tier markers,
-# canonical remedies, terminal tokens). A stray character disarms a gate silently, so the
-# spelling is checked mechanically instead of hoping a reviewer spots it.
+# The specs carry runtime strings their own evaluators match by literal
+# (tier markers, canonical remedies, terminal tokens). A stray character
+# disarms a gate silently, so spelling is checked mechanically instead of
+# hoping a reviewer spots it.
 #
-# Two jobs, on purpose. `contract` must not depend on the upstream catalog: it runs on
-# every push, and a rename over there would otherwise turn every unrelated PR here red —
-# which is the same unpinned-upstream dependency this repo just spent a release deleting.
-# `catalog` is a canary: it owns the upstream question and answers it on its own schedule.
-# Least privilege: this runs PR-authored code on `pull_request`, so it gets read-only
-# scope and no persisted credentials. A workflow that lints a supply chain and hands
-# its own token to the code it lints is not linting a supply chain.
+# Two jobs, on purpose. `contract` must not depend on the upstream catalog:
+# it runs on every push, and an upstream rename would otherwise turn every
+# unrelated PR here red. That is the unpinned dependency this repo removed.
+# `catalog` is a canary: it owns the upstream question on its own schedule.
+# Least privilege: PR-authored code gets read-only scope and no persisted
+# credentials. A workflow that hands its token to supply-chain code is not
+# linting a supply chain.
 permissions:
   contents: read
 
@@ -19,7 +20,8 @@ on:
     branches: ["**"]
   pull_request:
   schedule:
-    - cron: "0 6 * * 1" # Monday — upstream drift is a Monday problem, not a PR problem
+    # Monday — upstream drift is not a PR problem.
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -35,16 +37,23 @@ jobs:
         run: SKIP_CATALOG_CHECK=1 scripts/check-format.py
       - name: Review-loop graders reject false greens
         run: bash evals/review-loop/graders/self-test.sh
+      - name: Council graders reject false greens
+        run: bash evals/council/graders/self-test.sh
 
   catalog:
-    # Does the persona path table still resolve on a clean install? Only upstream can
-    # break this, so only upstream's clock should be able to break the build.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Only upstream can break persona path resolution, so only its clock can
+    # break this job.
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: git clone --depth 1 https://github.com/msitarzewski/agency-agents ~/.agency-agents
+      - run: |
+          git clone --depth 1 \
+            https://github.com/msitarzewski/agency-agents \
+            ~/.agency-agents
       - name: Every lane still resolves to a real agent
         run: scripts/check-format.py

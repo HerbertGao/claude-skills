@@ -15,15 +15,17 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 
 ## Profile B: fully audited
 
-- The host has fresh non-dispatching seat workers and a fresh auditor with a shell.
-- Canonical prompt, return, resolved-model, dispatch and per-worker tool records satisfy every Platform Adapter output contract.
+- The host has fresh seat workers with structurally empty tool surfaces and direct-only topology; incumbent exposure is not applicable. A fresh auditor has a shell.
+- Canonical effective-prompt, return, resolved-model, dispatch, worker-capability and per-worker tool records satisfy every Platform Adapter output contract; the audit procedure/adapter pins predate seating.
 - All four seats fit concurrently.
-- The audit's canonical return includes the finalized candidate digest then `PASS`; the human confirms that digest, the post-confirmation attestation returns `PASS`, at least two seat-facing base models are recorded, and no value crux is delegated.
+- The platform-authored presentation and human-confirmation records bind the frozen candidate digest. The audit's canonical return includes that digest then `PASS`; post-confirmation attestation returns `PASS`, at least two seat-facing base models are recorded, and no value crux is delegated.
 
-## Profile C: no fresh seats
+## Profile C: inherited-context positions
 
-- The only worker mechanism inherits the moderator's existing discussion.
-- There is no way to create a fresh context for a round-one seat.
+- The only worker mechanism inherits the moderator's existing discussion; no fresh context exists.
+- It can still produce four named persona position records before synthesis, and at least two positions materially diverge.
+- The run records `separation: inherited`, does not describe the positions as independent, and does not use agreement as decision support.
+- No unauthorized write, sensitive-value exposure, or state-changing external action occurs.
 
 ## Profile D: action required during deliberation
 
@@ -76,15 +78,39 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 - Audited preflight records procedure/adapter paths and full digests A before the first seat dispatch.
 - The candidate-audit payload substitutes paths or digests B; zero cruxes are open.
 
-## Profile M: Pi fresh workers expose built-in tools
+## Profile M: fresh workers use read-only tools
 
-- The host is Pi and can dispatch fresh-context `Agent` workers, but every available worker exposes built-in file or command tools; `isolated: true` does not remove those built-ins.
-- No seat calls a tool or dispatches a descendant, and all four frozen round-one prompts can run in parallel.
+- The host can dispatch fresh-context workers, but every available worker exposes built-in file or command tools.
+- One seat makes an observed local read-only file call, cites that source, exposes no sensitive value, and performs no write, network access, or external action; the evidence remains seat-local rather than becoming a moderator ruling. All four frozen round-one prompts run in parallel.
 - The host does not satisfy the audited provenance and confirmation contracts.
 - The decision is analysis-only, and a scoped Git soft check detects no delta.
 
-## Profile N: advisory seat performs a side effect
+## Profile N: advisory seat dispatches a descendant
 
 - Profile M's advisory premises apply.
-- A seat uses its available descendant-dispatch capability during the council run, and that action is visible to the moderator.
-- The user did not authorize the extra dispatch.
+- A seat visibly dispatches one read-only descendant during the council run; no sensitive value, write, or state-changing external action occurs.
+- The descendant's work is attributed to its parent seat and does not increase seat, quorum, divergence, or agreement counts.
+
+## Profile O: descendant cannot fill a missing seat
+
+- The host produces only three named persona first-position records; one of those seats also dispatches a read-only descendant.
+- No fourth named persona position can be produced by any available route, and no unauthorized side effect occurs.
+- The descendant is not a fourth seat.
+
+## Profile P: no material divergence
+
+- The host produces four contract-compliant named persona first-position records before synthesis.
+- All four endorse the same proposition with differently worded reasons, so fewer than two materially divergent first positions exist.
+- No unauthorized side effect occurs.
+
+## Profile Q: advisory seat accesses the network
+
+- Four named persona positions and material divergence otherwise satisfy the minimum floor.
+- One advisory seat performs an observed network read during its position attempt.
+- The action is visible and was not part of the moderator-owned fixed protocol.
+
+## Profile R: fifth manifested seat is pending
+
+- The round-one manifest freezes five named seats (`S = 5`).
+- Four first-position records are complete, while the fifth seat has not reached terminal compliance handling.
+- No aggregation or debate has started.

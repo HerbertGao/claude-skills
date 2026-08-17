@@ -9,7 +9,8 @@ PROFILE-A-AUTHORIZES-IMPLEMENTATION: no
 PROFILE-B-MODE: audited
 PROFILE-B-CONVERGED-REQUIRES: audit-pass,zero-open-cruxes,human-confirmation,post-confirmation-attestation
 PROFILE-B-TOKEN: CONVERGED
-PROFILE-C-TOKEN: STOPPED (cannot run expert seats)
+PROFILE-C-TOKEN: ADVISORY (debate-converged; unaudited)
+PROFILE-C-SEPARATION: inherited
 PROFILE-D-TOKEN: STOPPED (advisory is analysis-only)
 PROFILE-E-MODE: advisory
 PROFILE-E-ROUND1: parallel
@@ -18,7 +19,7 @@ PROFILE-E-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-E-AUTHORIZES-IMPLEMENTATION: no
 PROFILE-F-TOKEN: UNRESOLVED (dispatch-unverifiable: 0 open)
 PROFILE-G-TOKEN: STOPPED (advisory side effect detected)
-PROFILE-E-WORKER-PREFERENCE: restricted
+PROFILE-E-TOOLS: unknown
 PROFILE-E-MODEL-CENSUS: unknown
 PROFILE-E-ASSURANCE-GAPS: return-provenance,model-census,tool-write-audit,confirmation-provenance
 PROFILE-E-SOFT-CHECK: none
@@ -29,6 +30,15 @@ PROFILE-K-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
 PROFILE-L-TOKEN: UNRESOLVED (audit-failed: fabrication)
 PROFILE-M-MODE: advisory
 PROFILE-M-ROUND1: parallel
+PROFILE-M-TOOLS: read-only-observed
+PROFILE-M-EVIDENCE: seat-local
 PROFILE-M-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-M-AUTHORIZES-IMPLEMENTATION: no
-PROFILE-N-TOKEN: STOPPED (advisory side effect detected)
+PROFILE-N-TOKEN: ADVISORY (debate-converged; unaudited)
+PROFILE-N-TOPOLOGY: descendants-observed
+PROFILE-N-ATTRIBUTION: parent-seat
+PROFILE-N-SEATS: 4
+PROFILE-O-TOKEN: STOPPED (cannot run expert seats)
+PROFILE-P-TOKEN: STOPPED (seats exhausted)
+PROFILE-Q-TOKEN: STOPPED (advisory side effect detected)
+PROFILE-R-AGGREGATION: waits-for-all-S

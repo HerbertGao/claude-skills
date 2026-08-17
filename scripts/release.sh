@@ -9,28 +9,38 @@
 set -euo pipefail
 shopt -s nullglob
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || { echo "release: cannot resolve repo root" >&2; exit 1; }
-cd "$root" || { echo "release: cannot cd to repo root" >&2; exit 1; }
-die() { printf 'release: %s\n' "$*" >&2; exit "${2:-1}"; }
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" || {
+  echo "release: cannot resolve repo root" >&2
+  exit 1
+}
+cd "$root" || {
+  echo "release: cannot cd to repo root" >&2
+  exit 1
+}
+die() {
+  printf 'release: %s\n' "$*" >&2
+  exit "${2:-1}"
+}
 
-ver="${1:-}"; mode="${2:-}"
+ver="${1:-}"
+mode="${2:-}"
 [[ -n "$ver" ]] || die "usage: scripts/release.sh <version> [--dry-run]" 2
 ver="${ver#v}"
 [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid version '$ver' (want N.N.N)" 2
 tag="v$ver"
-files=( */.claude-plugin/plugin.json codex-plugins/*/.codex-plugin/plugin.json .claude-plugin/marketplace.json )
+files=(*/.claude-plugin/plugin.json codex-plugins/*/.codex-plugin/plugin.json .claude-plugin/marketplace.json)
 repo_slug="${RELEASE_REPO_SLUG:-HerbertGao/herbertgao-skills}"
 
 validate_origin_remote() {
   local remote_url
-  remote_url="$(git remote get-url --push origin 2>/dev/null || git remote get-url origin 2>/dev/null)" \
-    || die "cannot read origin remote"
+  remote_url="$(git remote get-url --push origin 2>/dev/null || git remote get-url origin 2>/dev/null)" ||
+    die "cannot read origin remote"
   case "$remote_url" in
-    "https://github.com/$repo_slug"|"https://github.com/$repo_slug.git"|"git@github.com:$repo_slug.git"|"ssh://git@github.com/$repo_slug.git")
-      ;;
-    *)
-      die "origin remote '$remote_url' does not match release repo '$repo_slug'; update origin or set RELEASE_REPO_SLUG"
-      ;;
+  "https://github.com/$repo_slug" | "https://github.com/$repo_slug.git" | "git@github.com:$repo_slug.git" | "ssh://git@github.com/$repo_slug.git")
+    ;;
+  *)
+    die "origin remote '$remote_url' does not match release repo '$repo_slug'; update origin or set RELEASE_REPO_SLUG"
+    ;;
   esac
 }
 
@@ -38,8 +48,8 @@ validate_marketplaces() {
   command -v jq >/dev/null 2>&1 || die "jq not found (install jq)"
   local mf=".agents/plugins/marketplace.json"
   [[ -f "$mf" ]] || die "missing Codex marketplace: $mf"
-  [[ "$(jq -r '.name // empty' "$mf")" == "herbertgao-skills-codex" ]] \
-    || die "$mf name must be herbertgao-skills-codex"
+  [[ "$(jq -r '.name // empty' "$mf")" == "herbertgao-skills-codex" ]] ||
+    die "$mf name must be herbertgao-skills-codex"
   [[ "$(jq '.plugins | length' "$mf")" -gt 0 ]] || die "$mf has no plugins"
 
   local entry name source path manifest manifest_name
@@ -59,19 +69,19 @@ validate_marketplaces() {
   # reverse: every codex-plugins/<dir> must be registered, or it silently ships uninstallable
   local d
   for d in codex-plugins/*/; do
-    jq -e --arg p "./${d%/}" '.plugins[] | select(.source.path == $p)' "$mf" >/dev/null \
-      || die "$mf missing entry for $d"
+    jq -e --arg p "./${d%/}" '.plugins[] | select(.source.path == $p)' "$mf" >/dev/null ||
+      die "$mf missing entry for $d"
   done
 
   # same asymmetry on the Claude side: a <plugin>/ dir absent from the Claude marketplace
   # version-bumps, passes CI, and ships un-installable via /plugin install.
-  local cmf=".claude-plugin/marketplace.json" p dirs=( */.claude-plugin/ )
+  local cmf=".claude-plugin/marketplace.json" p dirs=(*/.claude-plugin/)
   # fail closed: nullglob would silently run zero checks if the layout broke
   [[ ${#dirs[@]} -gt 0 ]] || die "no Claude plugin dirs matched */.claude-plugin/ — layout/glob broke"
   for d in "${dirs[@]}"; do
     p="${d%/.claude-plugin/}"
-    jq -e --arg s "./$p" '.plugins[] | select(.source == $s)' "$cmf" >/dev/null \
-      || die "$cmf missing entry for $p"
+    jq -e --arg s "./$p" '.plugins[] | select(.source == $s)' "$cmf" >/dev/null ||
+      die "$cmf missing entry for $p"
   done
 
   # forward, Claude side: every entry must point at a real manifest whose name matches
@@ -80,20 +90,20 @@ validate_marketplaces() {
     cname="$(jq -r '.name // empty' <<<"$entry")"
     csrc="$(jq -r '.source // empty' <<<"$entry")"
     [[ -n "$cname" && -n "$csrc" ]] || die "$cmf has an entry without name/source"
-    [[ -f "$csrc/.claude-plugin/plugin.json" ]] \
-      || die "$cmf entry '$cname' points to missing manifest: $csrc/.claude-plugin/plugin.json"
-    [[ "$(jq -r '.name // empty' "$csrc/.claude-plugin/plugin.json")" == "$cname" ]] \
-      || die "$csrc/.claude-plugin/plugin.json name != marketplace entry '$cname'"
+    [[ -f "$csrc/.claude-plugin/plugin.json" ]] ||
+      die "$cmf entry '$cname' points to missing manifest: $csrc/.claude-plugin/plugin.json"
+    [[ "$(jq -r '.name // empty' "$csrc/.claude-plugin/plugin.json")" == "$cname" ]] ||
+      die "$csrc/.claude-plugin/plugin.json name != marketplace entry '$cname'"
   done < <(jq -c '.plugins[]' "$cmf")
 
   # README declares per-skill pairing: every universal skill ships a byte-identical Codex copy,
   # and every Codex skill dir is a COMPLETE pair (SKILL.md + agents/openai.yaml) backed by a
   # universal source. Every glob fails closed — a paired deletion (source + copy together) must
   # die too, not slip through zero loop iterations.
-  local srcs=( skills/*/SKILL.md ) s t twins p
+  local srcs=(skills/*/SKILL.md) s t twins p
   [[ ${#srcs[@]} -gt 0 ]] || die "no universal skills matched skills/*/SKILL.md — layout/glob broke"
   for s in "${srcs[@]}"; do
-    twins=( codex-plugins/*/"$s" )
+    twins=(codex-plugins/*/"$s")
     [[ ${#twins[@]} -gt 0 ]] || die "no Codex twin found for $s — every skills/*/SKILL.md needs one"
     for t in "${twins[@]}"; do
       cmp -s "$s" "$t" || die "twin drift: $t is not a byte-copy of $s — re-sync before releasing"
@@ -126,9 +136,17 @@ if [[ "$mode" == "--dry-run" ]]; then
   # so a dry-run never reverts to HEAD / never destroys uncommitted edits.
   snap="$(mktemp -d)" || die "mktemp failed"
   # shellcheck disable=SC2329  # invoked indirectly via the EXIT trap below
-  _dry_restore() { local f; for f in "${files[@]}"; do [[ -e "$snap/$f" ]] && cp "$snap/$f" "$f"; done; rm -rf "$snap"; }
+  _dry_restore() {
+    local f
+    for f in "${files[@]}"; do [[ -e "$snap/$f" ]] && cp "$snap/$f" "$f"; done
+    rm -rf "$snap"
+  }
   trap _dry_restore EXIT
-  for f in "${files[@]}"; do [[ -e "$f" ]] || continue; mkdir -p "$snap/$(dirname "$f")"; cp "$f" "$snap/$f"; done
+  for f in "${files[@]}"; do
+    [[ -e "$f" ]] || continue
+    mkdir -p "$snap/$(dirname "$f")"
+    cp "$f" "$snap/$f"
+  done
   validate_marketplaces
   scripts/bump-version.sh "$ver"
   git --no-pager diff -- "${files[@]}" || true
@@ -149,8 +167,8 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
   remote_tag="$(git ls-remote --tags origin "refs/tags/$tag")" || die "cannot reach origin to check tag $tag — fix connectivity and rerun"
   [[ -z "$remote_tag" ]] || die "tag $tag already released (exists on origin)"
   echo "release: tag $tag exists locally but not on origin (prior push aborted) — recovering"
-  git push -q --atomic origin main "refs/tags/$tag" \
-    || die "recovery push failed — if origin/main moved ahead, 'git pull --rebase origin main' then rerun; otherwise fix connectivity and rerun"
+  git push -q --atomic origin main "refs/tags/$tag" ||
+    die "recovery push failed — if origin/main moved ahead, 'git pull --rebase origin main' then rerun; otherwise fix connectivity and rerun"
   echo "release: recovered — pushed main + $tag."
   exit 0
 fi
@@ -164,7 +182,7 @@ git diff --cached --quiet && die "nothing to bump (already $ver everywhere)"
 git commit -q -m "chore(release): 版本统一到 $ver"
 git tag -a "$tag" -m "$tag"
 # atomic: main + tag land together or neither — no silent half-release
-git push -q --atomic origin main "refs/tags/$tag" \
-  || die "push failed — local commit+tag kept; fix connectivity and rerun 'scripts/release.sh $ver' to recover"
+git push -q --atomic origin main "refs/tags/$tag" ||
+  die "push failed — local commit+tag kept; fix connectivity and rerun 'scripts/release.sh $ver' to recover"
 echo "release: pushed $tag — CI is drafting the GitHub release."
 echo "  edit notes & Publish: https://github.com/$repo_slug/releases"
