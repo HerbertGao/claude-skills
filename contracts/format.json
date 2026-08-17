@@ -24,7 +24,9 @@
     "regex_patterns": [
       "ADVISORY[^\\n]{0,30}(?i:certif|audit PASS|audited)",
       "(?i:certif\\w*)[^\\n]{0,40}ADVISORY",
-      "(?i:audit PASS|audited)[^\\n]{0,20}ADVISORY"
+      "(?i:audit PASS|audited)[^\\n]{0,20}ADVISORY",
+      "(?i)(?:if|when)[^\\n]{0,40}(?:host|platform)[^\\n]{0,40}(?:offers|provides|supports)[^\\n]{0,120}(?:read[- ]only|review[- ]only|tool filtering|tool-less)[^\\n]{0,120}worktree[^\\n]{0,40}(?<!not )(?<!never )(?<!n't )(?:use|request)(?: it| one)?",
+      "(?:如果|当|若)[^\\n]{0,20}(?:宿主|平台)[^\\n]{0,40}(?:提供|支持)[^\\n]{0,120}(?:只读|工具过滤|tool filtering)[^\\n]{0,120}worktree[^\\n]{0,40}(?<!不得)(?<!不要)(?<!禁止)(?:使用|请求|创建)"
     ],
     "files": [
       "skills",
@@ -220,7 +222,8 @@
         "并行的前提是隔离，不是写集",
         "不要拿 subagent 返回里的 `task` 去定位",
         "⋃filesChanged ∖ ground",
-        "把受影响组的复选框改回 `- [ ]`"
+        "把受影响组的复选框改回 `- [ ]`",
+        "worktree 隔离只在 Git 工作树中、`HEAD` 可解析为 commit 且隔离创建成功时用于并行写入；任一条件不成立或隔离派发失败，都报告原因并降级为串行；只清理确认未启动且无 diff 的临时树，保留、复核并合并已启动或已有 diff 的 worker 树，只串行重派失败组，不得把缺少 worktree 升级为停机条件。"
       ],
       "catalog_paths": {
         "Frontend Developer": "engineering/engineering-frontend-developer.md",
@@ -384,7 +387,8 @@
         "opaque-path-id:line",
         "Serialization here is opaque-id/digest-only.",
         "never include raw argv, resolved paths, or search literals in this artifact or a seat dispatch.",
-        "structurally empty tool surface"
+        "structurally empty tool surface",
+        "A worktree is never required for a read-only worker: do not request one merely to enforce read-only behavior or outside a Git repository, and never make missing worktree support a prerequisite failure for a read-only workflow."
       ],
       "catalog_paths": {
         "Backend Architect": "engineering/engineering-backend-architect.md",

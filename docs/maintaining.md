@@ -35,6 +35,12 @@ herbertgao-skills/
 
 路由按终点而非工件是否存在：架构 / 技术选择使用 `council`，即使已有草稿；找错、修复并迭代到 `APPROVE` 使用 `review-loop`。两者都需要时先运行 council，方向未决则停止，已决后 review-loop 才能按 decision record 改稿。Council 的 incumbent-draft mode 必须保持草稿只读，并把 `keep` / `replace` / `combine` / `unresolved` 写入决策记录，而不是新增终态 token。
 
+## Subagent 隔离不变量
+
+- **只读审查、研究、规划**优先使用 tool-less worker、read-only tools 或 tool filtering。不得仅为了约束只读行为而请求 worktree；非 Git 目录不得请求 worktree。
+- **写入任务**只有在 Git 工作树中、`HEAD` 可解析且确实需要独立副本或可归因并行写入时才使用 worktree。宿主创建失败时，能在共享树安全串行就降级串行；只清理确认未启动且无 diff 的临时树，已启动或已有 diff 的树必须保留并验收，不得把缺少 worktree 自行升级为停机条件。
+- Skill 只描述所需能力与降级语义，不替宿主猜具体隔离参数。合法正向路径不变：Git 仓库中的显式并行写入隔离仍可使用 worktree，并保留独立副本中的修改。
+
 ## 契约校验
 
 这些 skill 的 SKILL.md 带**运行期字符串**(层级 marker、补救命令、catalog 源路径),它们自己的闸门要逐字匹配——错一个字符,闸门就静默失效。所以:

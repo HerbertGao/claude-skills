@@ -86,11 +86,13 @@ BASE=$(snap)                                       # 波首
 
 **并行的前提是隔离。**
 
-- **有 per-worker 隔离**（每组一棵树：`git worktree add .worktrees/<组> HEAD`，全部通过后 `git worktree remove` 清场）⇒ 一波 = 写集不相交、依赖已满足的那些组，并发派发。**每组在自己的树里改**——所以：
+**worktree guardrail.** worktree 隔离只在 Git 工作树中、`HEAD` 可解析为 commit 且隔离创建成功时用于并行写入；任一条件不成立或隔离派发失败，都报告原因并降级为串行；只清理确认未启动且无 diff 的临时树，保留、复核并合并已启动或已有 diff 的 worker 树，只串行重派失败组，不得把缺少 worktree 升级为停机条件。先运行 `git rev-parse --is-inside-work-tree` 与 `git rev-parse --verify 'HEAD^{commit}'`；两者成功仍只是必要条件。宿主能预建 worktree 时，全部创建成功才并行；隔离只能在派发时创建的宿主出现部分失败时，按本 guardrail 收拢为逐组串行验收。
+
+- **已成功创建 per-worker 隔离**（每组一棵树：`git worktree add .worktrees/<组> HEAD`，全部通过后 `git worktree remove` 清场）⇒ 一波 = 写集不相交、依赖已满足的那些组，并发派发。**每组在自己的树里改**——所以：
   - 该组的 `ground` 是**它自己那棵树**的 diff：`git -C <wt> diff --name-only <该树的 BASE>`。**主树的 `git status` 里没有它**，在主树上跑校验会让每个诚实的组都判负。
   - **review 通过后必须合并回主树**，一组一组串行：`git -C <wt> diff <BASE> | git apply --3way`。**冲突就是碰撞**——当场可见、可回滚，而且这是共享树上永远得不到的那个信号。**没有这一步，代码留在一根一次性分支上，复选框却在主树上被打勾，集成门跑的是一棵没有实现的树。**
   - 合并完再标记复选框，再跑步骤 7。
-- **没有隔离** ⇒ **一波一组，串行**。共享树上的并行没有诚实的碰撞证据源——`git` 只知道哪些文件被改了，不知道谁改的。串行时那一波只有一个写者，归因是平凡的。
+- **没有隔离或隔离派发失败** ⇒ **一波一组，串行**。共享树上的并行没有诚实的碰撞证据源——`git` 只知道哪些文件被改了，不知道谁改的。串行时那一波只有一个写者，归因是平凡的。
 
 （串行仍然拿到这个 skill 的全部价值：**上下文扇出**——每组一个干净的 subagent 上下文。并行买的是墙钟时间，代价是一个不成立的碰撞检测。）
 
@@ -100,7 +102,7 @@ BASE=$(snap)                                       # 波首
 
 **每组先解析一位实现专家**（见「实现专家与解析梯」），再派发：**registered 的角色直接按其名字派原生 subagent；未注册的**才以 `subagent_type: general-purpose` 派发、把其正文作为 persona 注入。**一组一 subagent、一组一返回。**
 
-*（Claude Code 的 `Agent` 工具带 `isolation: "worktree"`——**并行组用它**：每个 worker 拿到独立的 git worktree，每组的 diff 天然可归因，「写集归因」从「够用」升级为「严密」，而且不需要基线相减。代价是每组约 200–500ms 建树开销。）*
+*（Claude Code 的 `Agent` 工具带 `isolation: "worktree"`——**只在上述预检通过后给并行组用它**：每个 worker 拿到独立的 git worktree，每组的 diff 天然可归因，「写集归因」从「够用」升级为「严密」，而且不需要基线相减。部分创建失败时按 guardrail 保留并验收成功 worker 的树，只披露并串行重派失败组。）*
 
 **每个 subagent 的 prompt 必须包含：**
 
@@ -297,7 +299,7 @@ openspec-cn validate --strict ✓ · pnpm test ✓ · mvn -q test ✓
 ## Claude Code 机制
 
 - 并行派发：**在同一条消息里发出多个 `Agent` 调用**；写集不相交且依赖就绪的组才进同一波。
-- 并行组加 `isolation: "worktree"`——它把「写集归因」从启发式变成机制。
+- 只有步骤 5 的 worktree guardrail 预检通过，才给并行组加 `isolation: "worktree"`；部分失败时保留成功 worker 的树逐组验收，只把失败组按依赖顺序无隔离串行重派。
 - 实现 subagent 用 `general-purpose`（它需要 Write / Edit / Bash）。
 
 ## 护栏（压缩的契约索引，每条指回其步骤；「围栏」专指步骤 6 的 git 基线闸，是护栏之一）

@@ -178,7 +178,7 @@ def check(contract: dict, files: dict, tracked) -> list:
             stripped = _strip_legit.sub("", body)
             for rp in contract["forbidden_everywhere"].get("regex_patterns", []):
                 if re.search(rp, stripped):
-                    fail(f"forbidden collocation {rp!r} in {rel} — an escalating ADVISORY variant must not exist anywhere")
+                    fail(f"forbidden collocation {rp!r} in {rel} — a cross-surface semantic guard rejected it")
 
     for name, spec in contract["skills"].items():
         unknown = {k for k in spec if not k.startswith("$")} - FIELDS
@@ -1003,7 +1003,14 @@ def self_test() -> int:
     like it: each must be CAUGHT, and the clean spec must pass.
     """
     base = {
-        "forbidden_everywhere": {"patterns": ["jsdelivr"], "files": ["skills"]},
+        "forbidden_everywhere": {
+            "patterns": ["jsdelivr"],
+            "regex_patterns": [
+                r"(?i)(?:if|when)[^\n]{0,40}(?:host|platform)[^\n]{0,40}(?:offers|provides|supports)[^\n]{0,120}(?:read[- ]only|review[- ]only|tool filtering|tool-less)[^\n]{0,120}worktree[^\n]{0,40}(?<!not )(?<!never )(?<!n't )(?:use|request)(?: it| one)?",
+                r"(?:如果|当|若)[^\n]{0,20}(?:宿主|平台)[^\n]{0,40}(?:提供|支持)[^\n]{0,120}(?:只读|工具过滤|tool filtering)[^\n]{0,120}worktree[^\n]{0,40}(?<!不得)(?<!不要)(?<!禁止)(?:使用|请求|创建)",
+            ],
+            "files": ["skills"],
+        },
         "catalog": {"repo": "x", "min_depth": 2},
         "skills": {"s": {
             "files": ["skills/s/SKILL.md"], "tiers": ["local"], "marker_prefix": "[embedded",
@@ -1034,6 +1041,14 @@ def self_test() -> int:
         ("an echo label is renamed", base, good.replace("This round:", "Round:"), 1),
         ("a canonical marker form drifts", base, good.replace("→ fix]", "-> fix]"), 1),
         ("removed-behavior residue reappears", base, good + " pulled from jsDelivr", 1),
+        ("read-only worktree coupling reappears", base,
+         good + " If the host offers read-only mode, tool filtering, a worktree, use it.", 1),
+        ("Chinese read-only worktree coupling reappears", base,
+         good + " 如果宿主提供只读工具、tool filtering 和 worktree，就使用它。", 1),
+        ("negative read-only worktree rule passes", base,
+         good + " If the host offers read-only mode and a worktree, do not use it for review.", 0),
+        ("Git modifying worktree rule passes", base,
+         good + " If the host supports a worktree for a Git file-modifying task and creation succeeds, use it.", 0),
         ("the copied template lost its tier marker", base, good.replace("```text\n[local: div/role.md]\n```", "```text\nno marker here\n```") + " [local: div/role.md]", 1),
         ("a contract key is typo'd (its rule silently deleted)",
          dup(base, lambda d: d["skills"]["s"].__setitem__("exhastive", d["skills"]["s"].pop("exhaustive"))),
