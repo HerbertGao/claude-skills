@@ -63,13 +63,15 @@ VERDICT: <APPROVE|CHANGES-REQUESTED>
 
 ### Reality Checker (RC)
 
-Review failure behavior and false greens rather than repeating CR's general review.
+Review failure behavior, false greens, and false rejects rather than repeating CR's general review.
 
-1. Enumerate changed and directly affected guards, validations, error paths, state transitions, cleanup, tests, CI checks, and public/config/CLI fan-out.
+1. Enumerate changed and directly affected guards, validations, accept/normalize/degrade/reject outcomes, error paths, state transitions, cleanup, tests, CI checks, and public/config/CLI fan-out.
 2. Try only applicable failures: empty, null, malformed, timeout, partial write, restart, concurrency, expired state, zero rows, transient failure, and returned-error-not-value.
 3. Compare observed or specified behavior with the actual requirement. A success signal over a broken underlying operation is a blocker.
 4. Check that tests and checks exercise the claimed behavior rather than mocks, vacuous assertions, swallowed errors, or an isolated component that misses an interaction.
 5. On proposals, distinguish future deliverables from prerequisites. A file or symbol that the proposal promises to create is not missing. A claim about existing state still needs evidence from existing code, a contract, or a command result; the proposal is not evidence for its own premise.
+
+For open-ended or probabilistic producers, distinguish required downstream invariants from preferred output shape. Prefer tolerant normalization, degradation, and preservation of independently usable content. Reject the whole result only when it cannot be used safely for the required operation or no core usable content remains. A hard failure or discard over a safe usable result is a correctness defect, not added robustness.
 
 Use the same finding and verdict format as CR. For prose, walk the most consequential scenario and call out ambiguous, contradictory, duplicated, or unfollowable rules.
 
@@ -96,6 +98,8 @@ Set each worker's cwd to the implementation root for code/diff review, or to the
 
 Read the artifact, its diff, and the smallest relevant truth sources. State the intended behavior and boundaries using user-provided requirements or an adopted spec. Do not invent a scope fence from the artifact being reviewed.
 
+Freeze those governing requirement sources for the loop. A reviewer finding, prior triage, or loop-authored fix does not become a requirement source in a later round unless the user adopts it or an existing consumer contract independently requires it.
+
 If requirements are too ambiguous to distinguish a defect from a design choice, ask the user once for the missing decision. Otherwise proceed.
 
 ### 1. Review
@@ -112,6 +116,8 @@ Merge all findings into one deduplicated list. The main agent owns the normalize
 - **major** — serious design, requirement, failure-mode, or integration defect. Fix by default.
 - **minor** — real local issue that does not threaten correctness. Fix when cheap.
 - **nit** — style only. Usually skip.
+
+Before adding or tightening an input/output rejection gate, name the concrete safety, data-correctness, consumer, or user-visible failure that occurs without it. If no such failure follows from a governing requirement or independent invariant, choose `not-applicable` and do not implement the gate. Formatting, optional-field completeness, confidence, or evidence preferences alone are not concrete failures.
 
 A worker's verdict never overrides the findings. Any unresolved blocker or major makes the normalized round `CHANGES-REQUESTED`.
 
@@ -130,6 +136,8 @@ Run the smallest relevant checks after editing. Non-trivial changed logic leaves
 ### 4. Repeat-blocker root cause
 
 Track a blocker by the violated requirement, contract, or invariant; the affected operation or contract instance; and the causal defect when evidence identifies it. Failure behavior and location support continuity but may move or change after a fix. Do not merge independent causes merely because they produce the same symptom, and do not reset an existing blocker merely because wording or locus moved. Keep one `root-cause-used` latch per semantic blocker.
+
+Treat guard additions in two consecutive rounds on the same accept/normalize/degrade/reject path as the same repeated blocker when they address the same frozen governing requirement and lack separate safety, schema, data-correctness, or consumer invariants. This satisfies the trigger below even if the rejected shape, location, wording, or severity label changes. Dispatch the root-cause expert even if a round labeled the issue major rather than blocker. A guard backed by an independent safety, schema, data-correctness, or consumer invariant stays independent and is not merged into that blocker. Track that guard as a separate causal defect only if the guard itself violates a requirement or invariant. The root-cause approach must simplify the unsupported acceptance boundary rather than add another case-specific veto.
 
 When the same blocker remains a blocker in two consecutive review rounds, do **not** stop yet. The main agent directly dispatches one new root-cause expert who did not participate in those rounds. Use any fresh specialist or generic worker the host provides; if none exists, run a clearly separated `[same-context]` root-cause pass and disclose that limit.
 

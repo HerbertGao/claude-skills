@@ -86,7 +86,7 @@ npx skillgrade --eval=advisory-routing --trials=1 --provider=local \
 
 各 skill 的任务以自己的 `eval.yaml` 为准：
 
-- **review-loop**：`portable-routing`（四级宿主 fallback）、`expert-selection`（CR+RC + 可选 0..N 精确领域专家）、`root-cause-escalation`（同一 blocker 的一次根因升级），以及保留的 `knob-yagni` / `premise-cite` 缺陷发现回归。Bundled redactor 另有 runtime self-test，但不再是 review-loop 的通过前置。
+- **review-loop**：`portable-routing`（四级宿主 fallback）、`expert-selection`（CR+RC + 可选 0..N 精确领域专家）、`root-cause-escalation`（同一 blocker 的一次根因升级），以及 `knob-yagni` / `output-retention`/ `premise-cite` 缺陷发现回归。Bundled redactor 另有 runtime self-test，但不再是 review-loop 的通过前置。
 - **council**：`prereq-halt`、`unfollowable-floor`、`advisory-routing`、`advisory-debate-shape`、`incumbent-routing`、`incumbent-decision`、`trust-execution-boundary`。
 - **opsx**：分组、前置、reconcile、checkbox 定位与 snapshot 回归。
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deterministic grader for the portable review-loop protocol probes.
 set -euo pipefail
-mode=${1:?usage: protocol.sh <routing|experts|root-cause>}
+mode=${1:?usage: protocol.sh <routing|experts|root-cause|output-retention>}
 outcome=${OUTCOME_FILE:-OUTCOME.md}
 checks=$(mktemp "${TMPDIR:-/tmp}/review-protocol.XXXXXX")
 trap 'rm -f "$checks"' EXIT
@@ -19,6 +19,21 @@ exact_prefix() {
 		n=$((n + 1))
 		got=$(sed -n "${n}p" "$outcome" 2>/dev/null || true)
 		if [ "$got" = "$want" ]; then add "line-$n" true; else add "line-$n" false; fi
+	done <<EOF
+$expected
+EOF
+}
+exact_fields() {
+	local expected=$1 label matches got
+	while IFS= read -r want; do
+		label=${want%%:*}
+		matches=$(grep -E "^[[:space:]]*${label}:[[:space:]]*" "$outcome" 2>/dev/null || true)
+		got=$(printf '%s\n' "$matches" | sed -E 's/^[[:space:]]*//; s/[[:space:]]+$//')
+		if [ "$(printf '%s\n' "$matches" | grep -c . || true)" = 1 ] && [ "$got" = "$want" ]; then
+			add "field-$label" true
+		else
+			add "field-$label" false
+		fi
 	done <<EOF
 $expected
 EOF
@@ -68,6 +83,21 @@ CASE-C-ROOT-CAUSE-LATCH: unused
 CASE-D-TERMINAL: NOT-CONVERGED
 CASE-E-TERMINAL: OUT-OF-SCOPE-PENDING
 GLOBAL-BUDGET: none
+EOF
+	)"
+	;;
+output-retention)
+	exact_fields "$(
+		cat <<'EOF'
+A: forward
+B: normalize
+C: stop
+D: stop
+R4: waive
+SOFT-CHAIN: merge
+SOFT-ACTION: root-cause
+HARD-GUARD: keep
+PATCH: simplify
 EOF
 	)"
 	;;
