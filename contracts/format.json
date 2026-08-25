@@ -131,6 +131,26 @@
           "count": 1
         },
         {
+          "literal": "For open-ended or probabilistic producers, distinguish required downstream invariants from preferred output shape. Prefer tolerant normalization, degradation, and preservation of independently usable content. Reject the whole result only when it cannot be used safely for the required operation or no core usable content remains. A hard failure or discard over a safe usable result is a correctness defect, not added robustness.",
+          "selector": "section-prefix:Roles",
+          "count": 1
+        },
+        {
+          "literal": "Freeze those governing requirement sources for the loop. A reviewer finding, prior triage, or loop-authored fix does not become a requirement source in a later round unless the user adopts it or an existing consumer contract independently requires it.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Before adding or tightening an input/output rejection gate, name the concrete safety, data-correctness, consumer, or user-visible failure that occurs without it. If no such failure follows from a governing requirement or independent invariant, choose `not-applicable` and do not implement the gate. Formatting, optional-field completeness, confidence, or evidence preferences alone are not concrete failures.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
+          "literal": "Treat guard additions in two consecutive rounds on the same accept/normalize/degrade/reject path as the same repeated blocker when they address the same frozen governing requirement and lack separate safety, schema, data-correctness, or consumer invariants. This satisfies the trigger below even if the rejected shape, location, wording, or severity label changes. Dispatch the root-cause expert even if a round labeled the issue major rather than blocker. A guard backed by an independent safety, schema, data-correctness, or consumer invariant stays independent and is not merged into that blocker. Track that guard as a separate causal defect only if the guard itself violates a requirement or invariant. The root-cause approach must simplify the unsupported acceptance boundary rather than add another case-specific veto.",
+          "selector": "section-prefix:The loop",
+          "count": 1
+        },
+        {
           "literal": "When the same blocker remains a blocker in two consecutive review rounds",
           "selector": "section-prefix:The loop",
           "count": 1

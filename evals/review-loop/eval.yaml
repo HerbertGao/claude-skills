@@ -137,6 +137,42 @@ tasks:
         run: bash graders/knob-yagni.sh
         weight: 1.0
 
+  - name: output-retention
+    agent: command
+    command: bash bin/run-pi-output-retention.sh
+    instruction: |
+      ./SKILL.md is review-loop. Read ./contract.md, ./scenario.md, and
+      ./src/consumer.ts, then apply the Skill's Reality Checker, governing-requirement,
+      Triage, and repeated-blocker rules. This is a classification exercise: do not
+      dispatch reviewers or edit the inputs.
+
+      Include each of these nine labeled decisions exactly once. Their order and any surrounding reasoning are free:
+        A: <forward|normalize|stop>
+        B: <forward|normalize|stop>
+        C: <forward|normalize|stop>
+        D: <forward|normalize|stop>
+        R4: <apply|waive|defer>
+        SOFT-CHAIN: <merge|split>
+        SOFT-ACTION: <root-cause|ordinary|stop>
+        HARD-GUARD: <keep|remove>
+        PATCH: <simplify|append>
+      You may add reasoning after those lines. Do not read graders/, tests/, prompts/, or bin/.
+    workspace:
+      - src: bin
+        dest: bin
+      - src: ../../skills/review-loop/SKILL.md
+        dest: SKILL.md
+      - src: fixtures/output-retention-contract.md
+        dest: contract.md
+      - src: fixtures/output-retention-scenario.md
+        dest: scenario.md
+      - src: fixtures/output-retention-consumer.ts
+        dest: src/consumer.ts
+    graders:
+      - type: deterministic
+        run: bash graders/protocol.sh output-retention
+        weight: 1.0
+
   - name: premise-cite
     agent: command
     command: bash bin/run-pi.sh

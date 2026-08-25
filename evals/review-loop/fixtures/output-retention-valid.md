@@ -1,0 +1,9 @@
+A: forward
+B: normalize
+C: stop
+D: stop
+R4: waive
+SOFT-CHAIN: merge
+SOFT-ACTION: root-cause
+HARD-GUARD: keep
+PATCH: simplify
