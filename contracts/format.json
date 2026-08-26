@@ -1,7 +1,7 @@
 {
   "$comment": [
     "Canonical strings the skills must emit and the evaluators must match.",
-    "Universal and Codex SKILL.md stay self-contained; a packaged plugin may ship a pinned references/ runtime dependency.",
+    "Universal SKILL.md stays self-contained; a packaged plugin may ship a pinned references/ runtime dependency.",
     "Canonical strings still live in every skill copy — this file is the authority they are",
     "checked against, mechanically, by scripts/check-format.py at release and in CI.",
     "Edit a string here and in every file listed under `files`, or the check fails.",
@@ -33,7 +33,6 @@
       "review-loop",
       "council",
       "opsx",
-      "codex-plugins",
       "README.md",
       ".claude-plugin",
       ".agents"
@@ -43,8 +42,7 @@
     "review-loop": {
       "files": [
         "skills/review-loop/SKILL.md",
-        "review-loop/skills/review-loop/SKILL.md",
-        "codex-plugins/review-loop/skills/review-loop/SKILL.md"
+        "review-loop/skills/review-loop/SKILL.md"
       ],
       "tiers": [
         "registered",
@@ -224,11 +222,40 @@
         "Root-cause:"
       ]
     },
+    "eli5": {
+      "files": [
+        "skills/eli5/SKILL.md",
+        "eli5/skills/eli5/SKILL.md"
+      ],
+      "tiers": [],
+      "marker_prefix": null,
+      "marker_forms": [],
+      "required_verbatim": [
+        "Use the topic from the invoking user message; do not rely on a `$ARGUMENTS` placeholder.",
+        "If the invoking message contains no non-empty topic, ask for the topic and stop without creating an HTML file.",
+        "Write one self-contained HTML file.",
+        "Do not use CDNs, remote fonts, external images, build steps, or runtime network requests.",
+        "Include a data-URI favicon such as `<link rel=\"icon\" href=\"data:,\">` so local preview does not request `/favicon.ico`.",
+        "Otherwise treat unique temporary-directory creation as a fail-closed preflight, not an example.",
+        "If no unique absolute directory can be created, stop and report the failure without writing HTML.",
+        "Never use the current working directory, repository, or a fixed `eli5-*` directory as the default.",
+        "Use native interactive controls with full keyboard operation.",
+        "Do not trade factual accuracy for simplicity.",
+        "then return the absolute HTML path.",
+        "upstream-commit: 794af9e63d07fad17087dcab61f21f44cb48effd",
+        "upstream-blob: ff6b33c9b3277c493e03e47fad327c6ad318e1d5",
+        "anthropics/claude-plugins-community/blob/794af9e63d07fad17087dcab61f21f44cb48effd"
+      ],
+      "catalog_paths": {},
+      "echo_labels": [],
+      "tokens": [],
+      "exhaustive": [],
+      "fenced_must_contain": []
+    },
     "openspec-apply-change-subagent": {
       "files": [
         "skills/openspec-apply-change-subagent/SKILL.md",
-        "opsx/skills/openspec-apply-change-subagent/SKILL.md",
-        "codex-plugins/opsx/skills/openspec-apply-change-subagent/SKILL.md"
+        "opsx/skills/openspec-apply-change-subagent/SKILL.md"
       ],
       "tiers": [
         "registered",
@@ -266,8 +293,7 @@
     "council": {
       "files": [
         "skills/council/SKILL.md",
-        "council/skills/council/SKILL.md",
-        "codex-plugins/council/skills/council/SKILL.md"
+        "council/skills/council/SKILL.md"
       ],
       "tiers": [
         "synthesized"
@@ -452,22 +478,6 @@
           "selector": "json:description"
         },
         {
-          "file": "codex-plugins/council/.codex-plugin/plugin.json",
-          "selector": "json:description"
-        },
-        {
-          "file": "codex-plugins/council/.codex-plugin/plugin.json",
-          "selector": "json:interface.shortDescription"
-        },
-        {
-          "file": "codex-plugins/council/.codex-plugin/plugin.json",
-          "selector": "json:interface.longDescription"
-        },
-        {
-          "file": "codex-plugins/council/skills/council/agents/openai.yaml",
-          "selector": "line:short_description"
-        },
-        {
           "file": "README.md",
           "selector": "section:收录的 skill"
         },
@@ -477,10 +487,6 @@
         },
         {
           "file": "council/skills/council/SKILL.md",
-          "selector": "line:description"
-        },
-        {
-          "file": "codex-plugins/council/skills/council/SKILL.md",
           "selector": "line:description"
         }
       ],
@@ -582,10 +588,6 @@
         {
           "file": "council/bin/safe_check.py",
           "selector": "text"
-        },
-        {
-          "file": "codex-plugins/council/skills/council/bin/safe_check.py",
-          "selector": "text"
         }
       ],
       "required": [
@@ -608,19 +610,11 @@
           "selector": "text"
         },
         {
-          "file": "codex-plugins/review-loop/skills/review-loop/bin/redact.py",
-          "selector": "text"
-        },
-        {
           "file": "skills/council/bin/redact.py",
           "selector": "text"
         },
         {
           "file": "council/bin/redact.py",
-          "selector": "text"
-        },
-        {
-          "file": "codex-plugins/council/skills/council/bin/redact.py",
           "selector": "text"
         }
       ],
@@ -654,10 +648,6 @@
         {
           "file": "council/skills/council/references/incumbent-draft-mode.md",
           "selector": "text"
-        },
-        {
-          "file": "codex-plugins/council/skills/council/references/incumbent-draft-mode.md",
-          "selector": "text"
         }
       ],
       "required": [
@@ -669,6 +659,23 @@
         "**I4 — adversarial coverage:**",
         "**I5 — record and read-only gate:**",
         "I0 or I1 failure takes the main fabrication path"
+      ]
+    },
+    "eli5-upstream-license": {
+      "targets": [
+        {
+          "file": "skills/eli5/LICENSE.upstream",
+          "selector": "text"
+        },
+        {
+          "file": "eli5/skills/eli5/LICENSE.upstream",
+          "selector": "text"
+        }
+      ],
+      "required": [
+        "MIT License",
+        "Copyright (c) 2026 Thariq Shihipar",
+        "794af9e63d07fad17087dcab61f21f44cb48effd/eli5"
       ]
     }
   },

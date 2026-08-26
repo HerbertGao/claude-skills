@@ -22,10 +22,12 @@ jobs:
   draft-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           # Full history and tags for the changelog range.
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Format contract (a drifted literal is a gate that never fires)
         # No upstream clone: a third-party rename cannot break releases. The
@@ -50,7 +52,6 @@ jobs:
           shopt -s nullglob
           plugins=(
             */.claude-plugin/plugin.json
-            codex-plugins/*/.codex-plugin/plugin.json
           )
           if [[ ${#plugins[@]} -eq 0 ]]; then
             echo "::error::no plugin manifests matched"
@@ -75,46 +76,6 @@ jobs:
             rc=1
           fi
 
-          cmf=.agents/plugins/marketplace.json
-          if [[ ! -f "$cmf" ]]; then
-            echo "::error file=$cmf::missing Codex marketplace"
-            rc=1
-          else
-            got=$(jq -r '.name // empty' "$cmf")
-            if [[ "$got" == "herbertgao-skills-codex" ]]; then
-              echo "ok  $cmf name = $got"
-            else
-              echo "::error file=$cmf::marketplace name mismatch"
-              rc=1
-            fi
-            if [[ "$(jq '.plugins | length' "$cmf")" -eq 0 ]]; then
-              echo "::error file=$cmf::no Codex marketplace plugins"
-              rc=1
-            fi
-            while IFS= read -r entry; do
-              name=$(jq -r '.name // empty' <<<"$entry")
-              source=$(jq -r '.source.source // empty' <<<"$entry")
-              path=$(jq -r '.source.path // empty' <<<"$entry")
-              manifest="$path/.codex-plugin/plugin.json"
-              if [[ -z "$name" || "$source" != "local" || -z "$path" ]]; then
-                echo "::error file=$cmf::invalid entry: $name"
-                rc=1
-                continue
-              fi
-              if [[ ! -f "$manifest" ]]; then
-                echo "::error file=$cmf::missing manifest for '$name'"
-                rc=1
-                continue
-              fi
-              manifest_name=$(jq -r '.name // empty' "$manifest")
-              if [[ "$manifest_name" == "$name" ]]; then
-                echo "ok  $cmf entry $name -> $manifest"
-              else
-                echo "::error file=$manifest::marketplace name mismatch"
-                rc=1
-              fi
-            done < <(jq -c '.plugins[]' "$cmf")
-          fi
           if [[ $rc -ne 0 ]]; then
             echo "::error::release manifest verification failed"
             echo "Fix errors and rerun scripts/release.sh"

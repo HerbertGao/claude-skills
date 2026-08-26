@@ -13,6 +13,7 @@ Run: scripts/check-format.py            exit 1 on any failure
 
 import copy
 import glob
+import hashlib
 import json
 import os
 import re
@@ -24,6 +25,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTRACT = os.path.join(ROOT, "contracts", "format.json")
 CATALOG = os.path.expanduser(os.environ.get("AGENCY_AGENTS", "~/.agency-agents"))
+ELI5_LICENSE_SHA256 = "311389f0ab9dac13d074ba64526a10c0e70dc752532be0d42f271b0036af5a6e"
 
 # Every field is declared, always: an absent key and a misspelled one look identical,
 # so "no rule here" has to be said out loud as [] rather than by silence.
@@ -356,32 +358,13 @@ def check_toolless_agent_frontmatter(files: dict) -> list:
     return fails
 
 
-def check_twins(files: dict) -> list:
-    """Every universal skill artifact ships a byte-identical Codex copy."""
-    fails = []
-    sources = sorted(f for f in files
-                     if re.fullmatch(r"skills/[^/]+/(?:SKILL\.md|references/.+|bin/.+)", f))
-    for src in sources:
-        _, name, tail = src.split("/", 2)
-        pattern = rf"codex-plugins/[^/]+/skills/{re.escape(name)}/{re.escape(tail)}"
-        twins = [f for f in files if re.fullmatch(pattern, f)]
-        if not twins:
-            fails.append(f"{src} has no Codex twin under codex-plugins/*/skills/{name}/{tail}")
-        for twin in twins:
-            if files[twin] != files[src]:
-                fails.append(f"twin drift: {twin} is not a byte-copy of {src}")
-    return fails
-
-
 def check_review_redactor_copies(files: dict) -> list:
     """Security-sensitive redactor logic must be identical in every distribution."""
     paths = (
         "skills/review-loop/bin/redact.py",
         "review-loop/bin/redact.py",
-        "codex-plugins/review-loop/skills/review-loop/bin/redact.py",
         "skills/council/bin/redact.py",
         "council/bin/redact.py",
-        "codex-plugins/council/skills/council/bin/redact.py",
     )
     missing = [path for path in paths if path not in files]
     if missing:
@@ -399,7 +382,6 @@ def check_council_safe_check_copies(files: dict) -> list:
     paths = (
         "skills/council/bin/safe_check.py",
         "council/bin/safe_check.py",
-        "codex-plugins/council/skills/council/bin/safe_check.py",
     )
     missing = [path for path in paths if path not in files]
     if missing:
@@ -417,7 +399,6 @@ def check_council_reference_copies(files: dict) -> list:
     paths = (
         "skills/council/references/incumbent-draft-mode.md",
         "council/skills/council/references/incumbent-draft-mode.md",
-        "codex-plugins/council/skills/council/references/incumbent-draft-mode.md",
     )
     missing = [path for path in paths if path not in files]
     if missing:
@@ -427,7 +408,33 @@ def check_council_reference_copies(files: dict) -> list:
             if files[path] != source]
 
 
+def check_eli5_license_copies(files: dict, expected_sha: str = ELI5_LICENSE_SHA256) -> list:
+    """The upstream ELI5 MIT notice must ship unchanged in both distributions."""
+    paths = (
+        "skills/eli5/LICENSE.upstream",
+        "eli5/skills/eli5/LICENSE.upstream",
+    )
+    missing = [path for path in paths if path not in files]
+    if missing:
+        return [f"missing ELI5 upstream license copy: {path}" for path in missing]
+    required = (
+        "MIT License",
+        "Copyright (c) 2026 Thariq Shihipar",
+        "794af9e63d07fad17087dcab61f21f44cb48effd/eli5",
+    )
+    fails = [f"{path}: ELI5 upstream license omits {literal!r}"
+             for path in paths for literal in required if literal not in files[path]]
+    source = files[paths[0]]
+    fails += [f"ELI5 upstream license drift: {path}" for path in paths[1:]
+              if files[path] != source]
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+    if digest != expected_sha:
+        fails.append(f"ELI5 upstream license digest {digest} != pinned {expected_sha}")
+    return fails
+
+
 HOST_KEY = "subagent_type"   # the host's dispatch key: the one thing the neutral file never names
+HOST_COUPLED_SKILLS = frozenset({"council", "openspec-apply-change-subagent", "review-loop"})
 REVIEW_LOOP_CLAUDE_ADAPTER = (
     "### Claude Code adapter\n\n"
     "On Claude Code, when a cross-family extra pass would be useful, prefer a direct "
@@ -456,7 +463,7 @@ def check_claude_copies(files: dict) -> list:
     for src in sorted(f for f in files if re.fullmatch(r"skills/[^/]+/SKILL\.md", f)):
         name = src.split("/")[1]
         copies = [f for f in files
-                  if re.fullmatch(rf"(?!codex-plugins)[^/]+/skills/{re.escape(name)}/SKILL\.md", f)]
+                  if re.fullmatch(rf"[^/]+/skills/{re.escape(name)}/SKILL\.md", f)]
         if not copies:
             fails.append(f"{src} has no Claude copy at <plugin>/skills/{name}/SKILL.md")
         if HOST_KEY in files[src]:
@@ -470,10 +477,13 @@ def check_claude_copies(files: dict) -> list:
                 expected = files[src].replace(marker, REVIEW_LOOP_CLAUDE_ADAPTER + marker)
                 if files[c] != expected:
                     fails.append(f"{c} differs from {src} by more than the one canonical Claude adapter block")
-            elif files[c] == files[src]:
-                fails.append(f"{c} is a byte-copy of {src} — the Claude copy was flattened onto the neutral one")
-            elif HOST_KEY not in files[c]:
-                fails.append(f"{c} never names {HOST_KEY!r} — it is not dispatching on Claude Code")
+            elif name in HOST_COUPLED_SKILLS:
+                if files[c] == files[src]:
+                    fails.append(f"{c} is a byte-copy of {src} — the Claude copy was flattened onto the neutral one")
+                elif HOST_KEY not in files[c]:
+                    fails.append(f"{c} never names {HOST_KEY!r} — it is not dispatching on Claude Code")
+            elif files[c] != files[src]:
+                fails.append(f"{c} is a host-neutral Claude copy but differs from {src}")
     return fails
 
 
@@ -872,8 +882,8 @@ def check_families(contract: dict, files: dict) -> list:
 
 def load_markdown() -> dict:
     files = {}
-    exts = (".md", ".yaml", ".yml", ".json", ".py")  # shipped skill artifacts and metadata
-    for root in ("skills", "council", "opsx", "review-loop", "codex-plugins", "README.md",
+    exts = (".md", ".yaml", ".yml", ".json", ".py", ".upstream")  # shipped skill artifacts and metadata
+    for root in ("skills", "council", "opsx", "review-loop", "eli5", "README.md",
                  ".claude-plugin", ".agents"):
         path = os.path.join(ROOT, root)
         if os.path.isfile(path):
@@ -973,10 +983,10 @@ def main() -> int:
     fails += check_families(contract, files)
     fails += check_description_lengths(files)
     fails += check_toolless_agent_frontmatter(files)
-    fails += check_twins(files)
     fails += check_review_redactor_copies(files)
     fails += check_council_safe_check_copies(files)
     fails += check_council_reference_copies(files)
+    fails += check_eli5_license_copies(files)
     fails += check_claude_copies(files)
     fails += check_council_header_parser(files)
     fails += check_council_auditor_inflight(files)
@@ -1091,33 +1101,17 @@ def self_test() -> int:
             ok = False
         print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
 
-    # check_twins is a separate code path main() calls; a self-test that only drives
-    # check() prints a green tick over code nothing exercised.
-    twin_cases = [
-        ("twins match", {"skills/s/SKILL.md": "x", "codex-plugins/p/skills/s/SKILL.md": "x"}, 0),
-        ("twin content drifted", {"skills/s/SKILL.md": "x", "codex-plugins/p/skills/s/SKILL.md": "y"}, 1),
-        ("twin missing entirely", {"skills/s/SKILL.md": "x"}, 1),
-        ("bin twin matches", {"skills/s/bin/redact.py": "x", "codex-plugins/p/skills/s/bin/redact.py": "x"}, 0),
-        ("bin twin drifted", {"skills/s/bin/redact.py": "x", "codex-plugins/p/skills/s/bin/redact.py": "y"}, 1),
-    ]
-    for label, fs, expect in twin_cases:
-        got = 1 if check_twins(fs) else 0
-        if got != expect:
-            ok = False
-        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
-
     redactor_paths = (
         "skills/review-loop/bin/redact.py",
         "review-loop/bin/redact.py",
-        "codex-plugins/review-loop/skills/review-loop/bin/redact.py",
         "skills/council/bin/redact.py",
         "council/bin/redact.py",
-        "codex-plugins/council/skills/council/bin/redact.py",
     )
     redactor_cases = [
         ("redactor copies match", dict.fromkeys(redactor_paths, "x"), 0),
         ("Claude redactor drifted", {**dict.fromkeys(redactor_paths, "x"), redactor_paths[1]: "y"}, 1),
-        ("Claude redactor missing", dict.fromkeys((redactor_paths[0], redactor_paths[2]), "x"), 1),
+        ("Claude redactor missing",
+         {path: "x" for path in redactor_paths if path != redactor_paths[1]}, 1),
     ]
     for label, fs, expect in redactor_cases:
         got = 1 if check_review_redactor_copies(fs) else 0
@@ -1128,12 +1122,11 @@ def self_test() -> int:
     safe_check_paths = (
         "skills/council/bin/safe_check.py",
         "council/bin/safe_check.py",
-        "codex-plugins/council/skills/council/bin/safe_check.py",
     )
     safe_check_cases = [
         ("safe-check copies match", dict.fromkeys(safe_check_paths, "x"), 0),
         ("Claude safe-check drifted", {**dict.fromkeys(safe_check_paths, "x"), safe_check_paths[1]: "y"}, 1),
-        ("safe-check copy missing", dict.fromkeys(safe_check_paths[:2], "x"), 1),
+        ("safe-check copy missing", {safe_check_paths[0]: "x"}, 1),
     ]
     for label, fs, expect in safe_check_cases:
         got = 1 if check_council_safe_check_copies(fs) else 0
@@ -1141,14 +1134,36 @@ def self_test() -> int:
             ok = False
         print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
 
-    N, C = "skills/s/SKILL.md", "p/skills/s/SKILL.md"
+    eli5_license_paths = (
+        "skills/eli5/LICENSE.upstream",
+        "eli5/skills/eli5/LICENSE.upstream",
+    )
+    eli5_license = ("MIT License\nCopyright (c) 2026 Thariq Shihipar\n"
+                    "794af9e63d07fad17087dcab61f21f44cb48effd/eli5\n")
+    eli5_license_sha = hashlib.sha256(eli5_license.encode("utf-8")).hexdigest()
+    eli5_license_cases = [
+        ("ELI5 license copies match", dict.fromkeys(eli5_license_paths, eli5_license), 0),
+        ("ELI5 license drift is caught",
+         {eli5_license_paths[0]: eli5_license, eli5_license_paths[1]: eli5_license + "drift"}, 1),
+        ("ELI5 shared license drift is caught",
+         dict.fromkeys(eli5_license_paths, eli5_license + "shared drift"), 1),
+        ("ELI5 license missing is caught", {eli5_license_paths[0]: eli5_license}, 1),
+        ("ELI5 MIT notice missing is caught",
+         dict.fromkeys(eli5_license_paths, eli5_license.replace("MIT License", "")), 1),
+    ]
+    for label, fs, expect in eli5_license_cases:
+        got = 1 if check_eli5_license_copies(fs, eli5_license_sha) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
+    N, C = "skills/council/SKILL.md", "p/skills/council/SKILL.md"
     copy_cases = [
         ("claude copy differs and dispatches", {N: "neutral", C: "claude subagent_type: x"}, 0),
         ("claude copy flattened onto neutral", {N: "neutral", C: "neutral"}, 1),
         ("claude copy lost its dispatch key", {N: "neutral", C: "claude, no key"}, 1),
         ("neutral spec grew a host key", {N: "neutral subagent_type: x", C: "claude subagent_type: x"}, 1),
         ("claude copy missing entirely", {N: "neutral"}, 1),
-        ("codex twin is not a claude copy", {N: "neutral", "codex-plugins/p/skills/s/SKILL.md": "neutral"}, 1),
     ]
     for label, fs, expect in copy_cases:
         got = 1 if check_claude_copies(fs) else 0
@@ -1192,6 +1207,21 @@ def self_test() -> int:
           review_claude: actual[review_claude].replace("review-only dispatch", "fixing dispatch", 1)}, 1),
     ]
     for label, fs, expect in review_copy_cases:
+        got = 1 if check_claude_copies(fs) else 0
+        if got != expect:
+            ok = False
+        print(f"  {'✅' if got == expect else '❌'} {label:<48} caught={bool(got)}  want={bool(expect)}")
+
+    neutral_src = "skills/eli5/SKILL.md"
+    neutral_claude = "eli5/skills/eli5/SKILL.md"
+    neutral_body = "---\nname: eli5\ndescription: visual explainer\n---\n"
+    neutral_copy_cases = [
+        ("host-neutral Claude byte-copy passes",
+         {neutral_src: neutral_body, neutral_claude: neutral_body}, 0),
+        ("host-neutral Claude drift is caught",
+         {neutral_src: neutral_body, neutral_claude: neutral_body + "drift\n"}, 1),
+    ]
+    for label, fs, expect in neutral_copy_cases:
         got = 1 if check_claude_copies(fs) else 0
         if got != expect:
             ok = False

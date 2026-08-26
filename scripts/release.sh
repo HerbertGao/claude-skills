@@ -28,7 +28,7 @@ mode="${2:-}"
 ver="${ver#v}"
 [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid version '$ver' (want N.N.N)" 2
 tag="v$ver"
-files=(*/.claude-plugin/plugin.json codex-plugins/*/.codex-plugin/plugin.json .claude-plugin/marketplace.json)
+files=(*/.claude-plugin/plugin.json .claude-plugin/marketplace.json)
 repo_slug="${RELEASE_REPO_SLUG:-HerbertGao/herbertgao-skills}"
 
 validate_origin_remote() {
@@ -44,38 +44,24 @@ validate_origin_remote() {
   esac
 }
 
+validate_versions() {
+  local f got
+  for f in "${files[@]}"; do
+    if [[ "$f" == ".claude-plugin/marketplace.json" ]]; then
+      got="$(jq -r '.metadata.version // empty' "$f")"
+    else
+      got="$(jq -r '.version // empty' "$f")"
+    fi
+    [[ "$got" == "$ver" ]] || die "$f version '$got' != requested '$ver'"
+  done
+}
+
 validate_marketplaces() {
   command -v jq >/dev/null 2>&1 || die "jq not found (install jq)"
-  local mf=".agents/plugins/marketplace.json"
-  [[ -f "$mf" ]] || die "missing Codex marketplace: $mf"
-  [[ "$(jq -r '.name // empty' "$mf")" == "herbertgao-skills-codex" ]] ||
-    die "$mf name must be herbertgao-skills-codex"
-  [[ "$(jq '.plugins | length' "$mf")" -gt 0 ]] || die "$mf has no plugins"
 
-  local entry name source path manifest manifest_name
-  while IFS= read -r entry; do
-    name="$(jq -r '.name // empty' <<<"$entry")"
-    source="$(jq -r '.source.source // empty' <<<"$entry")"
-    path="$(jq -r '.source.path // empty' <<<"$entry")"
-    [[ -n "$name" ]] || die "$mf has a plugin entry without name"
-    [[ "$source" == "local" ]] || die "$mf entry '$name' must use local source"
-    [[ -n "$path" ]] || die "$mf entry '$name' has empty source.path"
-    manifest="$path/.codex-plugin/plugin.json"
-    [[ -f "$manifest" ]] || die "$mf entry '$name' points to missing manifest: $manifest"
-    manifest_name="$(jq -r '.name // empty' "$manifest")"
-    [[ "$manifest_name" == "$name" ]] || die "$manifest name '$manifest_name' != marketplace entry '$name'"
-  done < <(jq -c '.plugins[]' "$mf")
-
-  # reverse: every codex-plugins/<dir> must be registered, or it silently ships uninstallable
-  local d
-  for d in codex-plugins/*/; do
-    jq -e --arg p "./${d%/}" '.plugins[] | select(.source.path == $p)' "$mf" >/dev/null ||
-      die "$mf missing entry for $d"
-  done
-
-  # same asymmetry on the Claude side: a <plugin>/ dir absent from the Claude marketplace
+  # A Claude <plugin>/ dir absent from the marketplace
   # version-bumps, passes CI, and ships un-installable via /plugin install.
-  local cmf=".claude-plugin/marketplace.json" p dirs=(*/.claude-plugin/)
+  local cmf=".claude-plugin/marketplace.json" p entry d dirs=(*/.claude-plugin/)
   # fail closed: nullglob would silently run zero checks if the layout broke
   [[ ${#dirs[@]} -gt 0 ]] || die "no Claude plugin dirs matched */.claude-plugin/ — layout/glob broke"
   for d in "${dirs[@]}"; do
@@ -96,30 +82,7 @@ validate_marketplaces() {
       die "$csrc/.claude-plugin/plugin.json name != marketplace entry '$cname'"
   done < <(jq -c '.plugins[]' "$cmf")
 
-  # README declares per-skill pairing: every universal skill ships a byte-identical Codex copy,
-  # and every Codex skill dir is a COMPLETE pair (SKILL.md + agents/openai.yaml) backed by a
-  # universal source. Every glob fails closed — a paired deletion (source + copy together) must
-  # die too, not slip through zero loop iterations.
-  local srcs=(skills/*/SKILL.md) s t twins p
-  [[ ${#srcs[@]} -gt 0 ]] || die "no universal skills matched skills/*/SKILL.md — layout/glob broke"
-  for s in "${srcs[@]}"; do
-    twins=(codex-plugins/*/"$s")
-    [[ ${#twins[@]} -gt 0 ]] || die "no Codex twin found for $s — every skills/*/SKILL.md needs one"
-    for t in "${twins[@]}"; do
-      cmp -s "$s" "$t" || die "twin drift: $t is not a byte-copy of $s — re-sync before releasing"
-    done
-  done
-  # every Codex skill dir: complete pair, backed by a universal source
-  for t in codex-plugins/*/skills/*/; do
-    [[ -f "${t}SKILL.md" ]] || die "Codex skill missing its SKILL.md: $t"
-    [[ -f "${t}agents/openai.yaml" ]] || die "Codex skill missing its agents/openai.yaml: $t"
-    s="skills/$(basename "$t")/SKILL.md"
-    [[ -f "$s" ]] || die "orphan Codex skill: $t has no $s to copy from"
-  done
-  # every Codex plugin ships at least one skill; every Claude plugin ships its skill
-  for d in codex-plugins/*/; do
-    compgen -G "${d}skills/*/SKILL.md" >/dev/null || die "$d ships no skill (no skills/*/SKILL.md)"
-  done
+  # Every Claude plugin ships at least one skill.
   for d in "${dirs[@]}"; do
     p="${d%/.claude-plugin/}"
     compgen -G "$p/skills/*/SKILL.md" >/dev/null || die "$p has no skills/*/SKILL.md — the skill itself is missing"
@@ -149,6 +112,7 @@ if [[ "$mode" == "--dry-run" ]]; then
   done
   validate_marketplaces
   scripts/bump-version.sh "$ver"
+  validate_versions
   git --no-pager diff -- "${files[@]}" || true
   echo "release: (dry-run) restoring originals; a real run would commit, tag $tag, and push."
   exit 0
@@ -166,7 +130,12 @@ git fetch -q origin main || die "git fetch failed"
 if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
   remote_tag="$(git ls-remote --tags origin "refs/tags/$tag")" || die "cannot reach origin to check tag $tag — fix connectivity and rerun"
   [[ -z "$remote_tag" ]] || die "tag $tag already released (exists on origin)"
-  echo "release: tag $tag exists locally but not on origin (prior push aborted) — recovering"
+  validate_versions
+  tag_commit="$(git rev-parse "$tag^{}")"
+  head_commit="$(git rev-parse HEAD)"
+  [[ "$tag_commit" == "$head_commit" ]] ||
+    die "tag $tag points to $tag_commit but HEAD is $head_commit; history changed after tag creation. Recreate it at HEAD with 'git tag -fa $tag -m $tag' and rerun"
+  echo "release: tag $tag exists locally at HEAD but not on origin (prior push aborted) — recovering"
   git push -q --atomic origin main "refs/tags/$tag" ||
     die "recovery push failed — if origin/main moved ahead, 'git pull --rebase origin main' then rerun; otherwise fix connectivity and rerun"
   echo "release: recovered — pushed main + $tag."
@@ -177,6 +146,7 @@ fi
 [[ "$(git rev-parse HEAD)" == "$(git rev-parse FETCH_HEAD)" ]] || die "local main != origin/main — sync first"
 
 scripts/bump-version.sh "$ver"
+validate_versions
 git add -- "${files[@]}"
 git diff --cached --quiet && die "nothing to bump (already $ver everywhere)"
 git commit -q -m "chore(release): 版本统一到 $ver"

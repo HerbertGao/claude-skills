@@ -13,7 +13,6 @@
     "claude-code",
     "skill",
     "code-review",
-    "adversarial-review",
-    "codex"
+    "adversarial-review"
   ]
 }
