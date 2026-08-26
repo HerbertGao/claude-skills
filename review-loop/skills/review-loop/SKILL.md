@@ -5,7 +5,7 @@ description: >-
   to a pass. Starts with Code Reviewer and Reality Checker, may add zero or
   multiple highly relevant Agency Agents domain experts in the initial round,
   merges findings, applies the smallest accepted fixes, validates, and
-  re-reviews. The portable workflow adapts to Pi, Codex, OpenCode, Trae, and
+  re-reviews. The portable workflow adapts to Pi, OpenCode, Trae, and
   weaker hosts without requiring tool-less sandboxes, a reviewer catalog, or
   native subagents. Use for
   “review until it passes,” “find ship-blockers,” minimal-fix adversarial

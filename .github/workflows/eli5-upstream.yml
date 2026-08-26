@@ -1,0 +1,91 @@
+---
+name: eli5-upstream
+
+"on":
+  schedule:
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: eli5-upstream-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Compare pinned ELI5 source with upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          UPSTREAM_REPO: anthropics/claude-plugins-community
+          UPSTREAM_PATH: eli5/skills/eli5/SKILL.md
+        run: |
+          set -euo pipefail
+          skill=skills/eli5/SKILL.md
+          expected_commit=$(awk '$1 == "upstream-commit:" {print $2}' "$skill")
+          expected_blob=$(awk '$1 == "upstream-blob:" {print $2}' "$skill")
+          hex40='^[0-9a-f]{40}$'
+          [[ "$expected_commit" =~ $hex40 ]] || {
+            echo "::error file=$skill::invalid upstream-commit"
+            exit 1
+          }
+          [[ "$expected_blob" =~ $hex40 ]] || {
+            echo "::error file=$skill::invalid upstream-blob"
+            exit 1
+          }
+
+          contents_api="repos/$UPSTREAM_REPO/contents/$UPSTREAM_PATH"
+          pinned_blob=$(gh api "$contents_api?ref=$expected_commit" --jq .sha)
+          [[ "$pinned_blob" == "$expected_blob" ]] || {
+            echo "::error file=$skill::pinned commit resolves unexpectedly"
+            echo "got=$pinned_blob expected=$expected_blob"
+            exit 1
+          }
+
+          actual_blob=$(gh api "$contents_api?ref=main" --jq .sha)
+          if [[ "$actual_blob" == "$expected_blob" ]]; then
+            echo "ELI5 upstream unchanged: $actual_blob"
+            exit 0
+          fi
+
+          title="chore: review ELI5 upstream $actual_blob"
+          issues_api="repos/$REPO/issues?state=all&per_page=100"
+          issue_filter='.[] | select('
+          issue_filter+='(has("pull_request") | not) and .title == $title)'
+          existing=$(gh api --paginate "$issues_api" |
+            jq -r --arg title "$title" "$issue_filter | .html_url" |
+            head -1)
+          if [[ -n "$existing" ]]; then
+            echo "Issue already open: $existing"
+            exit 0
+          fi
+
+          body=$(mktemp)
+          cat >"$body" <<EOF
+          The upstream ELI5 Skill changed and needs a manual portability review.
+
+          - Upstream repository: https://github.com/$UPSTREAM_REPO
+          - Upstream path: \`$UPSTREAM_PATH\`
+          - Pinned commit: \`$expected_commit\`
+          - Pinned blob: \`$expected_blob\`
+          - Current blob: \`$actual_blob\`
+
+          Checklist:
+          - [ ] Review the upstream prompt diff and license metadata.
+          - [ ] Preserve the host-neutral contract when porting.
+          - [ ] Update provenance fields and notice when applicable.
+          - [ ] Run format, grader, installation, and browser checks.
+
+          _Opened automatically by \`.github/workflows/eli5-upstream.yml\`._
+          EOF
+          gh issue create --repo "$REPO" --title "$title" --body-file "$body"

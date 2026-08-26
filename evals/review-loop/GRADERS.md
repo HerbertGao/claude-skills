@@ -1,6 +1,6 @@
 # review-loop grader 判据
 
-当前通用/Claude/Codex 三版共享精简核心；Claude 仅额外保留可选 Codex rescue adapter。
+当前通用/Claude 两版共享精简核心；Claude 仅额外保留可选 Codex rescue adapter。
 改 grader 前先跑 `graders/self-test.sh`：每个确定性 grader 必须通过 valid fixture，并抓住
 false-green fixture。
 
@@ -31,4 +31,4 @@ wrapper 串行化和信号中断恢复。
 旧 `prereq-halt`、confidentiality hard-stop、三席/cross-family、strong-anchor 集合代数、
 residual-floor、常驻 simplicity/cold-reader、16 条 completion predicates、fix-induced `Landed ∩ triage`
 等 eval 与 fixture 绑定已删除的重协议，不能继续约束精简版。格式契约由
-`contracts/format.json` + `scripts/check-format.py` 机械锁住新核心与三份分发副本。
+`contracts/format.json` + `scripts/check-format.py` 机械锁住新核心与两份分发副本。

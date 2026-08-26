@@ -7,29 +7,28 @@
 ```text
 herbertgao-skills/
 ├─ .claude-plugin/marketplace.json   # Claude Code marketplace
-├─ review-loop/ · council/ · opsx/   # Claude Code plugin(各自 SOT;review-loop 仅额外带可选 Codex rescue adapter)
-├─ skills/                           # 通用版 SOT(npx skills add 安装源)
-├─ codex-plugins/                    # Codex 原生入口:SKILL.md 为 skills/ 的逐字节副本 + agents/openai.yaml
-├─ .agents/plugins/marketplace.json  # Codex repo-local marketplace
+├─ review-loop/ · council/ · opsx/ · eli5/ # Claude Code plugins
+├─ skills/                           # 通用版 SOT（npx skills add 安装源）
 ├─ contracts/ · scripts/             # 契约定义 + 发布/同步/校验脚本
-└─ evals/                            # skillgrade 行为 eval(见 evals/SKILLGRADE.md)
+└─ evals/                            # skillgrade 行为 eval（见 evals/SKILLGRADE.md）
 ```
 
-三份 SKILL.md：
+两份 SKILL.md：
 
-| Skill | Claude Code plugin 版 | 通用版 SOT | Codex 副本 |
-| --- | --- | --- | --- |
-| review-loop | [`review-loop/…/SKILL.md`](../review-loop/skills/review-loop/SKILL.md) | [`skills/review-loop/SKILL.md`](../skills/review-loop/SKILL.md) | `codex-plugins/review-loop/…`(逐字节副本) |
-| council | [`council/…/SKILL.md`](../council/skills/council/SKILL.md) | [`skills/council/SKILL.md`](../skills/council/SKILL.md) | `codex-plugins/council/…` |
-| opsx | [`opsx/…/SKILL.md`](../opsx/skills/openspec-apply-change-subagent/SKILL.md) | [`skills/openspec-apply-change-subagent/SKILL.md`](../skills/openspec-apply-change-subagent/SKILL.md) | `codex-plugins/opsx/…` |
+| Skill | Claude Code plugin 版 | 通用版 SOT |
+| --- | --- | --- |
+| review-loop | [`review-loop/…/SKILL.md`](../review-loop/skills/review-loop/SKILL.md) | [`skills/review-loop/SKILL.md`](../skills/review-loop/SKILL.md) |
+| council | [`council/…/SKILL.md`](../council/skills/council/SKILL.md) | [`skills/council/SKILL.md`](../skills/council/SKILL.md) |
+| opsx | [`opsx/…/SKILL.md`](../opsx/skills/openspec-apply-change-subagent/SKILL.md) | [`skills/openspec-apply-change-subagent/SKILL.md`](../skills/openspec-apply-change-subagent/SKILL.md) |
+| eli5 | [`eli5/…/SKILL.md`](../eli5/skills/eli5/SKILL.md) | [`skills/eli5/SKILL.md`](../skills/eli5/SKILL.md) |
 
 ## 哪份是权威(SOT)
 
-- `skills/<skill>/SKILL.md` 是通用版 SOT。`codex-plugins/` 下是它的**逐字节副本**(`check-format.py` fail-closed 地守着)。
-- `<plugin>/` 下的 Claude 版通常是手工维护的平行副本；其中 review-loop 被机械限制为“通用正文 + 唯一 canonical Claude adapter”，其余 skill 可在 frontmatter、Platform Adapter 与宿主专属 auditor 机制上不同，但共享语义必须对等。
-- `required_verbatim` 只机械守住 evaluator 会匹配的关键字面量,其余语义仍需人工 review。
-- `skills/council/references/incumbent-draft-mode.md` 是 incumbent-draft 协议 SOT；Codex 与 Claude package 中的同名 reference 保持逐字节副本。
-- `skills/review-loop/bin/redact.py` 是共享的**可选** redactor SOT；review-loop / council 的通用、Claude、Codex 六份副本必须逐字节一致，但它不再是 review-loop 的通过前置。`skills/council/bin/safe_check.py` 是 council 输出脱敏 wrapper SOT，三份分发副本同样 byte-lock；`check-format.py` fail-closed 校验。
+- `skills/<skill>/SKILL.md` 是平台中立的通用版 SOT，通过 `npx skills add` 分发。
+- `<plugin>/` 下的 Claude 版通常是手工维护的平行副本；其中 review-loop 被机械限制为“通用正文 + 唯一 canonical Claude adapter”，council / opsx 保留宿主耦合，host-neutral 的 eli5 则必须与通用版字节一致。
+- `required_verbatim` 只机械守住 evaluator 会匹配的关键字面量，其余语义仍需人工 review。
+- `skills/council/references/incumbent-draft-mode.md` 是 incumbent-draft 协议 SOT；Claude package 中的同名 reference 保持逐字节副本。
+- `skills/review-loop/bin/redact.py` 是共享的**可选** redactor SOT；review-loop / council 的通用、Claude 四份副本必须逐字节一致，但它不再是 review-loop 的通过前置。`skills/council/bin/safe_check.py` 是 council 输出脱敏 wrapper SOT，两份分发副本同样 byte-lock；`check-format.py` fail-closed 校验。
 
 ## 路由边界
 
@@ -51,13 +50,15 @@ herbertgao-skills/
 
 角色解析梯：`review-loop` 是 `registered → local → embedded → same-context`，任何一档缺失都不阻断；其首轮领域专家可选 0..N 个，但每个已选角色都须由具体工件触点直接证明对口。`opsx` 是 `registered → local → embedded`；`council` 是 `catalog → synthesized`——`synthesized`(自撰 persona)最多一席、且不能当反方席，一个真专家都解析不出来就 `STOPPED`。
 
+## ELI5 上游同步
+
+`skills/eli5/SKILL.md` 的 metadata 同时固定上游 commit 与 blob；两份 `LICENSE.upstream` 必须存在、字节一致且保留原 MIT notice。`.github/workflows/eli5-upstream.yml` 每周比较上游 `main` blob，变化时按新 blob 创建 issue，只提醒人工 review，不自动更新提示词或许可证。
+
 ## 新增 skill
 
-要改 6 处,缺一处就装不上:
+要改 4 处，缺一处就装不上：
 
 1. `<plugin>/.claude-plugin/plugin.json` — Claude plugin manifest
-2. `<plugin>/skills/<skill>/SKILL.md` — Claude 版 SOT
-3. `.claude-plugin/marketplace.json` — 追加一条,否则 `/plugin install` 装不上
-4. `skills/<skill>/SKILL.md` — 通用版 SOT(平台中立)
-5. `codex-plugins/<plugin>/` — `.codex-plugin/plugin.json` + `skills/<skill>/SKILL.md`(第 4 条的逐字节副本)+ `skills/<skill>/agents/openai.yaml`
-6. `.agents/plugins/marketplace.json` — 追加一条,否则 `codex plugin add <name>@herbertgao-skills-codex` 失败
+2. `<plugin>/skills/<skill>/SKILL.md` — Claude 版
+3. `.claude-plugin/marketplace.json` — 追加一条，否则 `/plugin install` 装不上
+4. `skills/<skill>/SKILL.md` — 通用版 SOT（平台中立）
