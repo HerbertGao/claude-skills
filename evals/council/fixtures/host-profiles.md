@@ -35,7 +35,7 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 ## Profile E: restricted seats, no provenance, parallel capacity
 
 - Fresh-context seat workers exist and cannot dispatch descendants, but they have shell access and can write.
-- Canonical dispatch/full-prompt records and a fresh shell auditor are available, but there is no canonical return copy, resolved-model record, per-worker tool log, or platform-authored confirmation record.
+- Canonical dispatch/full-prompt records and a fresh shell auditor are available, but there is no canonical return copy, resolved-model record, per-worker tool log, or platform-authored confirmation record. Because tool use is unobservable, the final tools vector is `unknown`; known tool availability alone cannot establish `available-unused`.
 - All four seats fit concurrently.
 - The host has no worker-continuation mechanism, but it can create a fresh replacement worker.
 - The decision is analysis-only; no seat needs an external or irreversible action.
@@ -47,10 +47,10 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 - After all cruxes close, a required canonical seat return is missing even after the one settle/re-read.
 - No fabrication cause can be distinguished from record loss; zero cruxes are open.
 
-## Profile G: advisory soft check detects a write
+## Profile G: advisory seat write is observed
 
 - Fresh-context advisory seats exist.
-- The before/after Git snapshot shows a net change outside `workdir` after a seat batch.
+- A platform worker record shows that one seat wrote a user-owned path outside `workdir`; the before/after Git snapshot confirms the delta.
 - The changed path belongs to the user and must not be auto-reverted.
 
 ## Profile H: candidate changed after audit
@@ -114,3 +114,35 @@ Apply the council Platform Adapter and terminal rules to each independent profil
 - The round-one manifest freezes five named seats (`S = 5`).
 - Four first-position records are complete, while the fifth seat has not reached terminal compliance handling.
 - No aggregation or debate has started.
+
+## Profile S: advisory Harness memory write is irrelevant
+
+- Profile A's advisory premises apply and the debate ends with zero open cruxes.
+- After one seat batch, the Git snapshot shows one new file under `.pi/hindsight/`. Outer Harness metadata declares that exact path as memory-module state; no run-actor action is observed, while Profile A's missing tool logs remain disclosed under `tool-write-audit`.
+- The file is not a truth source, cited source, check artifact, candidate, protocol pin, canonical record, or other state used by any position, crux, ruling, or Decision traceability.
+- The moderator records `Concurrent-write review` with `origin: host-external`, `decision-overlap: none`, `impact: irrelevant`, then rebaselines and continues.
+
+## Profile T: audited post-audit memory write is irrelevant
+
+- Profile B's audited premises apply.
+- After candidate audit and before attestation, a platform lifecycle record attributes one repository write to the Harness memory module; no run actor initiated it.
+- The moderator's read-only review shows no protected decision-state overlap and appends `post-candidate-concurrent-write-review:` to the evidence envelope. Candidate, its Quality line, incumbent, audit pins, prior canonical records, decision inputs, and decision evidence remain unchanged; only the append-only envelope/log chain grows.
+- Presentation and confirmation bind the unchanged candidate; attestation verifies the envelope review and returns `PASS`.
+
+## Profile U: external write changes a frozen truth source
+
+- After round-one returns are frozen, a platform lifecycle record attributes a repository write to an external Harness service; no run actor initiated it.
+- The changed file is in the shared round-one truth-source baseline and changes a hard constraint used by seat positions.
+- The moderator records `impact: revisit`; it must not rebaseline as irrelevant or continue to synthesis/reveal under the old nonce.
+
+## Profile V: irrelevant-looking delta has unknown origin
+
+- An advisory snapshot shows a new file under a path that resembles host cache state and does not overlap decision state.
+- No platform/lifecycle event identifies its writer, and incomplete worker-tool records cannot exclude a run actor. The path name alone is the only attribution clue.
+- The moderator must record `origin: unknown`; visual irrelevance cannot authorize rebaseline.
+
+## Profile W: Git-only snapshot finds an untracked symlink
+
+- An advisory Git-only soft check lists an untracked symlink outside `workdir`; its target points outside the project root.
+- The fourth snapshot command detects `-L`, emits `UNVERIFIABLE-SYMLINK`, and exits nonzero before `git hash-object`; no tool dereferences or reads the target.
+- Because no prior lstat/readlink/resolved-target snapshot exists, the delta cannot be classified irrelevant.

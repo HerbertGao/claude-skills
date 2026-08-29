@@ -42,6 +42,16 @@ PROFILE-O-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-P-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-Q-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-R-AGGREGATION: started-after-four
+PROFILE-S-DISPOSITION: stop
+PROFILE-S-TOKEN: STOPPED (advisory side effect detected)
+PROFILE-T-DISPOSITION: stop
+PROFILE-T-RECORD: candidate
+PROFILE-T-TOKEN: UNRESOLVED (confirmation-unverifiable: 0 open)
+PROFILE-U-DISPOSITION: rebaseline
+PROFILE-V-DISPOSITION: rebaseline
+PROFILE-V-TOKEN: ADVISORY (debate-converged; unaudited)
+PROFILE-W-SYMLINK: dereference
+PROFILE-W-TOKEN: ADVISORY (debate-converged; unaudited)
 PROFILE-A-MODE: audited
 ADVISORY CERTIFIED (audit PASS)
 ADVISORY is non-authorizing but authorizes implementation.
