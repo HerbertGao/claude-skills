@@ -42,3 +42,13 @@ PROFILE-O-TOKEN: STOPPED (cannot run expert seats)
 PROFILE-P-TOKEN: STOPPED (seats exhausted)
 PROFILE-Q-TOKEN: STOPPED (advisory side effect detected)
 PROFILE-R-AGGREGATION: waits-for-all-S
+PROFILE-S-DISPOSITION: rebaseline
+PROFILE-S-TOKEN: ADVISORY (debate-converged; unaudited)
+PROFILE-T-DISPOSITION: rebaseline
+PROFILE-T-RECORD: evidence-envelope
+PROFILE-T-TOKEN: CONVERGED
+PROFILE-U-DISPOSITION: restart-run
+PROFILE-V-DISPOSITION: stop
+PROFILE-V-TOKEN: STOPPED (external change unresolved)
+PROFILE-W-SYMLINK: stop-without-dereference
+PROFILE-W-TOKEN: STOPPED (external change unresolved)

@@ -55,6 +55,8 @@ A normalized candidate contains: candidate id; topology/components and data flow
 
 After every round-one seat/pass is terminal and compliance handling is complete, emit exactly one search-completion record with the included dispatch/pass ids or digests. For `inaccessible` or `not-supplied`, name it `Round-1 returns frozen:` and perform no later round-one retry before reveal. For `visible` or `unknown`, name it `Round-1 search complete:` and record `reveal: already-visible`; never claim freeze/reveal ordering proved candidate independence.
 
+`Round-1 returns frozen` binds those returns, their shared inputs, and retry/reveal ordering — not unrelated repository paths. Apply the main skill's `Concurrent-write review` to any delta. An irrelevant Harness/external delta may be disclosed and rebaselined. A change to the adopted brief or shared baseline requires a fresh-nonce restart before reveal; a changed incumbent remains the existing non-waivable digest integrity failure.
+
 ## Normalize, qualify, and compare
 
 After the search-completion record:
@@ -106,6 +108,6 @@ In audited mode the fresh auditor runs the main A0–A9 checks plus this separat
 - **I2 — qualification:** recompute qualification and aggregation from candidate-search plus decision-base returns; verify incumbent, challengers, and composites use the same constraints and criteria.
 - **I3 — source integrity:** compare incumbent quotations and normalized fields with the source at the intake digest.
 - **I4 — adversarial coverage:** verify DA attacked the qualification ledger and any zero-challenger conclusion, and that every broken target reopened qualification.
-- **I5 — record and read-only gate:** reconcile decision mode, counts, freeze/reveal, one compare dispatch per compliant seat, disposition, and `compare` in the model census; verify intake digest equals final digest, no tool wrote the incumbent, and the record says `Incumbent draft edited: no`.
+- **I5 — record and read-only gate:** reconcile decision mode, counts, freeze/reveal, one compare dispatch per compliant seat, disposition, `compare` in the model census, and every `Concurrent-write review`; verify intake digest equals final digest, no tool wrote the incumbent, and the record says `Incumbent draft edited: no`.
 
 I0 or I1 failure takes the main fabrication path with no re-audit. Exact scans cannot detect every paraphrase or moderator bias; disclose that audit floor rather than claiming perfect blindness. Advisory mode skips I0–I5 regardless of exposure and must not borrow their claims.

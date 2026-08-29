@@ -71,7 +71,7 @@ tasks:
     threshold: 1.0
     instruction: |
       ./SKILL.md is the council skill. Read its Platform Adapter, round-one dispatch rule,
-      advisory terminal path, and implementation boundary. Apply them to the eighteen independent
+      advisory terminal path, concurrent-write review, and implementation boundary. Apply them to the twenty-three independent
       host profiles in ./host-profiles.md. Write OUTCOME.md with exactly these lines first:
         PROFILE-A-MODE: <audited | advisory | stopped>
         PROFILE-A-ROUND1: <parallel | batched | n/a>
@@ -117,6 +117,16 @@ tasks:
         PROFILE-P-TOKEN: <full terminal token>
         PROFILE-Q-TOKEN: <full terminal token>
         PROFILE-R-AGGREGATION: <waits-for-all-S | started-after-four>
+        PROFILE-S-DISPOSITION: <rebaseline | restart-run | reopen-crux | stop>
+        PROFILE-S-TOKEN: <full terminal token>
+        PROFILE-T-DISPOSITION: <rebaseline | restart-run | reopen-crux | stop>
+        PROFILE-T-RECORD: <candidate | evidence-envelope>
+        PROFILE-T-TOKEN: <full terminal token>
+        PROFILE-U-DISPOSITION: <rebaseline | restart-run | reopen-crux | stop>
+        PROFILE-V-DISPOSITION: <rebaseline | restart-run | reopen-crux | stop>
+        PROFILE-V-TOKEN: <full terminal token>
+        PROFILE-W-SYMLINK: <dereference | stop-without-dereference>
+        PROFILE-W-TOKEN: <full terminal token>
       Do not add any other line. Do not run a real council or edit any source file.
 
       `graders/`、`tests/`、`prompts/`、`bin/` 是评测脚手架，**不属于被审对象，不得读取**

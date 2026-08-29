@@ -1,7 +1,7 @@
 #!/bin/bash
 # Grades an exact, ordered and unique capability-routing schema.
 p=0
-t=46
+t=56
 cks=""
 outcome=${OUTCOME_FILE:-OUTCOME.md}
 add() { cks="$cks{\"name\":\"$1\",\"passed\":$2,\"message\":\"$3\"},"; }
@@ -66,6 +66,16 @@ check_exact profileO_floor 41 PROFILE-O-TOKEN 'PROFILE-O-TOKEN: STOPPED (cannot 
 check_exact profileP_divergence 42 PROFILE-P-TOKEN 'PROFILE-P-TOKEN: STOPPED (seats exhausted)' 'Duplicate endorsements do not satisfy material divergence'
 check_exact profileQ_network 43 PROFILE-Q-TOKEN 'PROFILE-Q-TOKEN: STOPPED (advisory side effect detected)' 'Observed seat network access remains a hard stop'
 check_exact profileR_barrier 44 PROFILE-R-AGGREGATION 'PROFILE-R-AGGREGATION: waits-for-all-S' 'Aggregation waits for every manifested seat attempt'
+check_exact profileS_disposition 45 PROFILE-S-DISPOSITION 'PROFILE-S-DISPOSITION: rebaseline' 'Irrelevant Harness memory writes are reviewed and rebaselined'
+check_exact profileS_token 46 PROFILE-S-TOKEN 'PROFILE-S-TOKEN: ADVISORY (debate-converged; unaudited)' 'Irrelevant external writes do not abort advisory debate'
+check_exact profileT_disposition 47 PROFILE-T-DISPOSITION 'PROFILE-T-DISPOSITION: rebaseline' 'Audited post-audit external writes receive an impact review'
+check_exact profileT_record 48 PROFILE-T-RECORD 'PROFILE-T-RECORD: evidence-envelope' 'Post-audit review does not mutate the frozen candidate'
+check_exact profileT_token 49 PROFILE-T-TOKEN 'PROFILE-T-TOKEN: CONVERGED' 'Verified irrelevant external writes do not invalidate attestation'
+check_exact profileU_disposition 50 PROFILE-U-DISPOSITION 'PROFILE-U-DISPOSITION: restart-run' 'A changed frozen truth source restarts under a fresh nonce'
+check_exact profileV_disposition 51 PROFILE-V-DISPOSITION 'PROFILE-V-DISPOSITION: stop' 'Unknown origin cannot be laundered by an irrelevant-looking path'
+check_exact profileV_token 52 PROFILE-V-TOKEN 'PROFILE-V-TOKEN: STOPPED (external change unresolved)' 'Unknown external origin stops with its distinct token'
+check_exact profileW_symlink 53 PROFILE-W-SYMLINK 'PROFILE-W-SYMLINK: stop-without-dereference' 'Git-only snapshots never follow untracked symlinks'
+check_exact profileW_token 54 PROFILE-W-TOKEN 'PROFILE-W-TOKEN: STOPPED (external change unresolved)' 'Unverifiable symlink metadata takes the unresolved route'
 
 bad_cert=$(grep -Ei 'ADVISORY.*(CERTIF|AUDIT[[:space:]]+PASS|[^[:alpha:]]AUDITED([^[:alpha:]]|$))' "$outcome" 2>/dev/null || true)
 bad_authority=$(awk '{ line=tolower($0); if (line !~ /advisory/) next; gsub(/non-authoriz(ed|ing)/,"",line); gsub(/does not authorize/,"",line); gsub(/cannot authorize/,"",line); gsub(/never authorizes?/,"",line); if (line ~ /authoriz/ || line ~ /implementation[^.]*approv/ || line ~ /approv[^.]*implementation/ || line ~ /advisory[^.]*may proceed/) print $0 }' "$outcome" 2>/dev/null)
@@ -79,11 +89,11 @@ else
 fi
 
 lines=$(awk 'END {print NR+0}' "$outcome" 2>/dev/null)
-if [ "$lines" -eq 44 ]; then
+if [ "$lines" -eq 54 ]; then
   p=$((p + 1))
-  add closed_schema true 'Outcome contains exactly the 44 required lines and no contradictory tail'
+  add closed_schema true 'Outcome contains exactly the 54 required lines and no contradictory tail'
 else
-  add closed_schema false 'Outcome must contain exactly the 44 required lines and no contradictory tail'
+  add closed_schema false 'Outcome must contain exactly the 54 required lines and no contradictory tail'
 fi
 
 score=$(awk "BEGIN {printf \"%.2f\", $p/$t}")

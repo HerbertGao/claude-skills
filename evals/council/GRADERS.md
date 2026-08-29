@@ -21,11 +21,14 @@ Pins the minimum operating floor separately from optional assurance. Inherited c
 local read-only evidence, and descendants continue as non-authorizing advisory while disclosing
 separation/tools/topology; descendants stay attributed to their parent and cannot fill a missing
 seat. Negative profiles require four named first positions, at least two material divergences,
-and terminal handling for every manifested seat before synthesis. Unauthorized deployment,
-write, or seat network access remains a hard stop, while audited `CONVERGED` still requires the
-full structural and provenance contract. The false-green fixture preserves the older high-gate
-stops, promotes seat-local evidence, counts a descendant as a seat, and lets duplicate endorsements
-pass.
+and terminal handling for every manifested seat before synthesis. Unauthorized run-actor writes,
+deployment, or seat network access remain hard stops. A Harness/external repository delta instead
+receives a moderator impact review: positively attributed irrelevant state rebaselines, frozen
+truth-source changes restart, unknown origin stops, Git-only checks reject untracked symlinks without
+dereferencing, and audited post-confirmation reviews stay in the evidence envelope for attestation before
+`CONVERGED`. The false-green fixture preserves the older all-deltas-stop behavior,
+excuses relevant or unknown-origin changes, promotes seat-local evidence, counts a descendant as a seat,
+and lets duplicate endorsements pass.
 
 ## `incumbent-routing.sh`
 
